@@ -1,0 +1,48 @@
+services:
+  # 1. Database service (PostgreSQL)
+  db:
+    image: postgres:16-alpine
+    container_name: m-motors_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT}:5433"
+
+  # 2. Backend service (Django)
+  backend:
+    build: ./backend
+    container_name: m-motors_backend
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=${DEBUG}
+      - DB_NAME=${POSTGRES_DB}
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_HOST=db
+      - DB_PORT=5432
+    depends_on:
+      - db
+    env_file:
+      - ./.env
+
+  # 3. Frontend service (React + Vite)
+  frontend:
+    build: ./frontend
+    container_name: m-motors_frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # Avoid to install twice the node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
