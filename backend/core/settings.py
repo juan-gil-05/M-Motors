@@ -49,7 +49,8 @@ INSTALLED_APPS = [
     "corsheaders",
     # Local apps
     "vehicle_api",
-    "application_api"
+    "application_api",
+    "user_api"
 ]
 
 MIDDLEWARE = [
