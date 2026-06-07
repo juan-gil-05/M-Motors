@@ -6,3 +6,4 @@ django-environ
 cloudinary
 django-cloudinary-storage
 gunicorn
+djangorestframework-simplejwt
