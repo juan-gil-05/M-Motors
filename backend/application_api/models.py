@@ -5,14 +5,14 @@ from vehicle_api.models import Vehicle
 User = get_user_model()
 
 
-class ApplicationStatus(models.Model):
+class Status(models.Model):
     name = models.CharField(max_length=100)
 
     def __str__(self):
         return self.name
     
     class Meta:
-        verbose_name_plural = "Applications Statuses"
+        verbose_name_plural = "Statuses"
 
 
 class Application(models.Model):
@@ -26,7 +26,7 @@ class Application(models.Model):
         Vehicle, on_delete=models.CASCADE, related_name="applications"
     )
     status = models.ForeignKey(
-        ApplicationStatus, on_delete=models.RESTRICT, related_name="applications"
+        Status, on_delete=models.RESTRICT, related_name="applications"
     )
 
     def __str__(self):

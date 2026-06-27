@@ -1,7 +1,7 @@
 from django.contrib import admin
-from .models import ApplicationStatus, Application, Document
+from .models import *
 
 # Register your models here.
-admin.site.register(ApplicationStatus)
+admin.site.register(Status)
 admin.site.register(Application)
 admin.site.register(Document)

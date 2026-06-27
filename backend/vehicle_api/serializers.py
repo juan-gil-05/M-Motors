@@ -1,15 +1,5 @@
 from rest_framework import serializers
-from .models import (
-    Status,
-    Fuel,
-    Gearbox,
-    ContractType,
-    Make,
-    Model,
-    Vehicle,
-    LeaseDetail,
-    Image,
-)
+from .models import *
 
 
 class StatusSerializer(serializers.ModelSerializer):
