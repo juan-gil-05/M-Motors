@@ -7,3 +7,4 @@ cloudinary
 django-cloudinary-storage
 gunicorn
 djangorestframework-simplejwt
+drf-spectacular
