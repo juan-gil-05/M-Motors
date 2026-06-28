@@ -2,13 +2,15 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from email_validator import validate_email
 import re
 
 class UserSerializer(serializers.ModelSerializer):
-    # The email must be unique in the database
+    # The email must be unique in the database, and must be a in a valid format
     email = serializers.EmailField(
         required=True,
-        validators=[UniqueValidator(queryset=User.objects.all(), message="This email is already registered.")]
+        validators=[UniqueValidator(queryset=User.objects.all(), message="Cette adresse mail est déjà utilisée")],
+        error_messages = {"invalid" : "L’adresse email saisie n’est pas valide."}
     )
 
     class Meta:
