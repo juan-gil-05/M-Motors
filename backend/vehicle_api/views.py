@@ -1,27 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser
-from .models import (
-    Status,
-    Fuel,
-    Gearbox,
-    ContractType,
-    Make,
-    Model,
-    Vehicle,
-    LeaseDetail,
-    Image,
-)
-from .serializers import (
-    StatusSerializer,
-    FuelSerializer,
-    GearboxSerializer,
-    ContractTypeSerializer,
-    MakeSerializer,
-    ModelSerializer,
-    VehicleSerializer,
-    LeaseDetailSerializer,
-    ImageSerializer,
-)
+from .models import *
+from .serializers import *
 
 
 class VehicleViewSet(viewsets.ModelViewSet):
