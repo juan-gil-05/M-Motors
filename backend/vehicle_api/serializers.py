@@ -152,7 +152,7 @@ class VehicleSerializer(serializers.ModelSerializer):
                     Image.objects.create(vehicle=instance, **image_item)
         
         return instance
-
+    
     def to_representation(self, instance):
         """
         This method intercept the output JSON (GET) and replaces simple IDs

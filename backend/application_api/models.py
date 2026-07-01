@@ -30,7 +30,7 @@ class Application(models.Model):
     )
 
     def __str__(self):
-        return f"Application {self.id}, from user : {self.user_id} and vehicle {self.vehicle_id}, is {self.status.name}"
+        return f"Le dossier {self.id}, du client : {self.user_id} et le vehicule {self.vehicle_id}, est {self.status.name}"
 
 
 class Document(models.Model):
@@ -40,4 +40,4 @@ class Document(models.Model):
     )
 
     def __str__(self):
-        return f"Documents for the application: {self.application_id}"
+        return f"Documents du dossier: {self.application_id}"
