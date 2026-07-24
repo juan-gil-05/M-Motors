@@ -8,7 +8,7 @@ from application_api.models import Application
 
 
 class VehicleViewSet(viewsets.ModelViewSet):
-    queryset = Vehicle.objects.all()
+    queryset = Vehicle.objects.all().exclude(owner__isnull=False)
     serializer_class = VehicleSerializer
 
     def get_permissions(self):
