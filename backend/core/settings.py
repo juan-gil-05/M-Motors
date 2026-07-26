@@ -54,10 +54,13 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-# Configure CORS allowed origins for development
+# Configure CORS allowed origins
 CORS_ALLOWED_ORIGINS = [
+    # In local
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    # In Production
+    "https://m-motors-frontend-ohqq.onrender.com"
 ]
 
 ROOT_URLCONF = "core.urls"
