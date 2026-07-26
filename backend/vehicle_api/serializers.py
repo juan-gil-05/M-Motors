@@ -126,7 +126,7 @@ class VehicleSerializer(serializers.ModelSerializer):
             else:
                 LeaseDetail.objects.create(vehicle=instance, **lease_details_data)
         # step C : The vehicle was to lease, but now it is to sold, so i delete the lease details
-        elif 'lease_details' is not self.initial_data:
+        elif 'lease_details' != self.initial_data:
             if hasattr(instance, 'lease_details') and instance.lease_details:
                 instance.lease_details.delete()
             

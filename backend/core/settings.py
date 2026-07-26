@@ -11,7 +11,7 @@ env = environ.Env(
     DEBUG=(bool, False)
 )
 
-# Ne lit le fichier .env que si la variable DATABASE_URL n'est pas DEJA définie par le système (Render)
+# Read the .env file only in local, but in production use environment variables from render
 if os.path.exists(os.path.join(BASE_DIR, ".env")):
     environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
