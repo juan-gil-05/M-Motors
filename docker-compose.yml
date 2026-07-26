@@ -22,6 +22,7 @@ services:
       - "8000:8000"
     environment:
       - DEBUG=${DEBUG}
+      - DATABASE_URL=${DATABASE_URL}
       - DB_NAME=${POSTGRES_DB}
       - DB_USER=${POSTGRES_USER}
       - DB_PASSWORD=${POSTGRES_PASSWORD}

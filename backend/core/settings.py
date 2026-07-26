@@ -80,15 +80,25 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "core.wsgi.application"
 
+# DB URL for prod
+DATABASE_URL = env("DATABASE_URL", default=None)
+# Or, DB URL for local dev
+if not DATABASE_URL:
+    db_name = env("DB_NAME", default=env("POSTGRES_DB", default=""))
+    db_user = env("DB_USER", default=env("POSTGRES_USER", default="postgres"))
+    db_password = env("DB_PASSWORD", default=env("POSTGRES_PASSWORD", default=""))
+    db_host = env("DB_HOST", default=env("POSTGRES_HOST", default="localhost"))
+    db_port = env("DB_PORT", default=env("POSTGRES_PORT", default="5432"))
 
-# DATABASES = {
-#     "default": env.db_url_config(
-#         f"postgres://{env('DB_USER')}:{env('DB_PASSWORD')}@{env('DB_HOST')}:{env('DB_PORT')}/{env('DB_NAME')}"
-#     )
-# }
+    if db_name and db_user and db_password:
+        DATABASE_URL = (
+            f"postgresql://{quote(db_user)}:{quote(db_password)}@{db_host}:{db_port}/{db_name}"
+        )
+    else:
+        DATABASE_URL = "sqlite:///db.sqlite3"
 
 DATABASES = {
-    "default": env.db_url("DATABASE_URL")
+    "default": env.db_url("DATABASE_URL", default=DATABASE_URL)
 }
 
 # Password validation
