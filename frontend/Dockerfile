@@ -3,8 +3,11 @@ FROM node:20-slim AS build
 WORKDIR /app
 COPY package*.json ./
 
+# Instal of binding linux-x64-gnu for rolldown/vite (Because of dependencies error in prod)
+RUN npm install --include=optional @rolldown/binding-linux-x64-gnu
+
 # npm install all dependencies 
-RUN npm install --os=linux --cpu=x64
+RUN npm install
 
 # Copy the rest of the frontend code
 COPY . .
