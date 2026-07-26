@@ -11,13 +11,12 @@ env = environ.Env(
     DEBUG=(bool, False)
 )
 
-# Take environment variables from .env file
-environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
+# Ne lit le fichier .env que si la variable DATABASE_URL n'est pas DEJA définie par le système (Render)
+if os.path.exists(os.path.join(BASE_DIR, ".env")):
+    environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env("SECRET_KEY")
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env("DEBUG")
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", ".onrender.com"]
@@ -92,7 +91,7 @@ if not DATABASE_URL:
 
     if db_name and db_user and db_password:
         DATABASE_URL = (
-            f"postgresql://{quote(db_user)}:{quote(db_password)}@{db_host}:{db_port}/{db_name}"
+            f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
         )
     else:
         DATABASE_URL = "sqlite:///db.sqlite3"
