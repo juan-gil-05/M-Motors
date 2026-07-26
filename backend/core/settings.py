@@ -21,8 +21,6 @@ SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", ".onrender.com"]
-ALLOWED_HOSTS += env.list("ALLOWED_HOSTS", default=[])
-
 
 # Application definition
 
@@ -83,11 +81,16 @@ TEMPLATES = [
 WSGI_APPLICATION = "core.wsgi.application"
 
 
+# DATABASES = {
+#     "default": env.db_url_config(
+#         f"postgres://{env('DB_USER')}:{env('DB_PASSWORD')}@{env('DB_HOST')}:{env('DB_PORT')}/{env('DB_NAME')}"
+#     )
+# }
+
 DATABASES = {
-    "default": env.db_url_config(
-        f"postgres://{env('DB_USER')}:{env('DB_PASSWORD')}@{env('DB_HOST')}:{env('DB_PORT')}/{env('DB_NAME')}"
-    )
+    "default": env.db_url("DATABASE_URL")
 }
+
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
