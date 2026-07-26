@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # npm install all dependencies 
-RUN npm install --os=linux --cpu=x64
+RUN npm ci && npm rebuild
 
 # Copy the rest of the frontend code
 COPY . .
