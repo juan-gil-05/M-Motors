@@ -1,7 +1,9 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 // Icons SVG
 import {Search, ShoppingBag, KeySquare} from "lucide-react"
+
+import HeroImage from "../assets/home_hero.webp"
+import AboutImage from "../assets/about.webp"
 
 export default function Home() {
     return (
@@ -10,7 +12,7 @@ export default function Home() {
             {/* HERO SECTION */}
             <section className="relative h-120 md:h-135.5 bg-slate-900 flex items-center justify-start overflow-hidden">
                 <img
-                    src="../src/assets/home_hero.webp"
+                    src={HeroImage}
                     alt="Voiture M-Motors"
                     className="absolute inset-0 w-full h-full object-cover opacity-60"
                     fetchPriority="high"
@@ -86,7 +88,7 @@ export default function Home() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                     <div className="rounded-2xl overflow-hidden shadow-xl">
                         <img
-                            src="../src/assets/about.webp"
+                            src={AboutImage}
                             alt="Remise de clés M-Motors"
                             className="w-full h-87.5 object-cover"
                         />
