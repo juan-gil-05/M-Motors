@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 // Icons SVG
 import { Menu, CircleUserRound } from "lucide-react"
@@ -34,7 +34,7 @@ export default function Navbar() {
 
                     {/* Auth Buttons Desktop */}
                     <div className="hidden md:flex items-center space-x-3">
-                        <Link to="/signup" className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-700 transition">
+                        <Link to="/inscription" className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-700 transition">
                             S'inscrire
                         </Link>
                         <Link to="/login" className="bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition">
@@ -58,7 +58,7 @@ export default function Navbar() {
                     <Link to="/" className="block text-slate-700 font-medium">Louer</Link>
                     <Link to="/" className="block text-slate-700 font-medium">Mes dossiers</Link>
                     <div className="pt-2 flex flex-col gap-2">
-                        <Link to="/signup" className="w-full text-center bg-blue-600 text-white py-2 rounded-lg text-sm font-medium">S'inscrire</Link>
+                        <Link to="/inscription" className="w-full text-center bg-blue-600 text-white py-2 rounded-lg text-sm font-medium">S'inscrire</Link>
                         <Link to="/login" className="w-full text-center bg-blue-700 text-white py-2 rounded-lg text-sm font-medium">Se connecter</Link>
                     </div>
                 </div>
