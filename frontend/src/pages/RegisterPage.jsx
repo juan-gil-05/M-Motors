@@ -92,14 +92,14 @@ const RegisterPage = () => {
         setIsSubmitting(true);
 
         try {
-            console.log(formData)
-            const res = await api.post("user_api/users/", {
+            const res = await api.post("/user_api/users/", {
                 first_name: formData.firstName,
                 last_name: formData.lastName,
                 email: formData.email,
-                password: formData.password
+                password: formData.password,
             })
-            if (res.status == 201) {
+
+            if (res.status === 201) {
                 setSuccessMessage('Inscription réussie ! Redirection vers la page de connexion...');
                 // Redirect to login page after 2 seconds
                 setTimeout(() => {
@@ -109,7 +109,6 @@ const RegisterPage = () => {
         } catch (err) {
             // Handle server-side errors (email already exists, ...)
             const emailError = err.response.data.email
-            console.log(emailError)
             if (emailError) {
                 setApiError(emailError);
             } else {
