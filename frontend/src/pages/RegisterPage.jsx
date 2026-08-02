@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, CheckCircle2, ArrowRight } from 'lucide-react';
 import api from '../api/api'
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const RegisterPage = () => {
     const navigate = useNavigate();
@@ -299,14 +300,23 @@ const RegisterPage = () => {
                                 )}
                             </div>
 
-                            {/* Submit Button */}
+                            {/* Submit Button with loading spinner */}
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
                                 className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-md transition-colors duration-200 flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
                             >
-                                <span>Créer mon compte</span>
-                                <ArrowRight className="w-4 h-4" />
+                                {isSubmitting ? (
+                                    <>
+                                        <LoadingSpinner size="sm" />
+                                        <span>Création du compte...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>Créer mon compte</span>
+                                        <ArrowRight className="w-4 h-4" />
+                                    </>
+                                )}
                             </button>
                         </form>
 
