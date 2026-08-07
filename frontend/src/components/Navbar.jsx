@@ -1,10 +1,19 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 // Icons SVG
 import { Menu, CircleUserRound } from "lucide-react"
 
 export default function Navbar() {
+    const { isAuthenticated, logout } = useAuth();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    const navigate = useNavigate()
+
+    const handleLogout = () => {
+        logout();
+        navigate('/');
+    };
 
     return (
         <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
@@ -18,34 +27,48 @@ export default function Navbar() {
                             className="md:hidden text-gray-700 focus:outline-none"
                         >
                             {/* Icon burger menu */}
-                            <Menu /> 
+                            <Menu />
                         </button>
                         <Link to="/" className="text-2xl font-black tracking-wider text-slate-900">
                             M-MOTORS
                         </Link>
                     </div>
 
+
                     {/* Nav Links Desktop */}
                     <div className="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-700">
                         <Link to="/" className="hover:text-blue-600 transition-colors">Acheter</Link>
                         <Link to="/" className="hover:text-blue-600 transition-colors">Louer</Link>
-                        <Link to="/" className="hover:text-blue-600 transition-colors">Mes dossiers</Link>
+                        {isAuthenticated ?
+                            // Shown only when user is logged in
+                            <Link to="/" className="hover:text-blue-600 transition-colors">Mes dossiers</Link>
+                            :
+                            <></>
+                        }
                     </div>
 
                     {/* Auth Buttons Desktop */}
                     <div className="hidden md:flex items-center space-x-3">
-                        <Link to="/inscription" className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-700 transition">
-                            S'inscrire
-                        </Link>
-                        <Link to="/login" className="bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition">
-                            Se connecter
-                        </Link>
+                        {isAuthenticated ?
+                            <button onClick={handleLogout} className="bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition cursor-pointer">
+                                Se déconnecter
+                            </button>
+                            :
+                            <>
+                                <Link to="/connexion" className="bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition">
+                                    Se connecter
+                                </Link>
+                                <Link to="/inscription" className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-700 transition">
+                                    S'inscrire
+                                </Link>
+                            </>
+                        }
                     </div>
 
                     {/* Mobile Profile Icon */}
                     <div className="md:hidden">
-                        <Link to="/login" className="text-slate-800">
-                            <CircleUserRound/>
+                        <Link to="/connexion" className="text-slate-800">
+                            <CircleUserRound />
                         </Link>
                     </div>
                 </div>
@@ -59,7 +82,7 @@ export default function Navbar() {
                     <Link to="/" className="block text-slate-700 font-medium">Mes dossiers</Link>
                     <div className="pt-2 flex flex-col gap-2">
                         <Link to="/inscription" className="w-full text-center bg-blue-600 text-white py-2 rounded-lg text-sm font-medium">S'inscrire</Link>
-                        <Link to="/login" className="w-full text-center bg-blue-700 text-white py-2 rounded-lg text-sm font-medium">Se connecter</Link>
+                        <Link to="/connexion" className="w-full text-center bg-blue-700 text-white py-2 rounded-lg text-sm font-medium">Se connecter</Link>
                     </div>
                 </div>
             )}
