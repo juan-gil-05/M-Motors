@@ -104,7 +104,7 @@ const RegisterPage = () => {
                 setSuccessMessage('Inscription réussie ! Redirection vers la page de connexion...');
                 // Redirect to login page after 2 seconds
                 setTimeout(() => {
-                    navigate('/login');
+                    navigate('/connexion');
                 }, 2000);
             }
         } catch (err) {
@@ -323,7 +323,7 @@ const RegisterPage = () => {
                         {/* Login Link */}
                         <div className="text-center text-sm text-slate-600 pt-2">
                             Vous avez déjà un compte ?{' '}
-                            <Link to="/login" className="text-blue-600 hover:underline font-medium">
+                            <Link to="/connexion" className="text-blue-600 hover:underline font-medium">
                                 Se connecter
                             </Link>
                         </div>

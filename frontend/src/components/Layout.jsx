@@ -1,6 +1,6 @@
-import React from 'react';
 import Navbar from './Navbar';
 import Footer from './Footer';
+import { Toaster } from 'react-hot-toast';
 
 export default function Layout({ children }) {
   return (
@@ -8,6 +8,7 @@ export default function Layout({ children }) {
       <Navbar />
       <main className="grow">{children}</main>
       <Footer />
+      <Toaster position="bottom-right"/>
     </div>
   );
 }
