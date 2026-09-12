@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, data } from 'react-router-dom';
 import { ChartNoAxesColumnIcon, CodeSquare, Eye, EyeOff } from 'lucide-react';
 import api from '../api/api'
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -79,8 +79,8 @@ const LoginPage = () => {
             })
 
             if (res.status === 200) {
-                const {access, refresh} = res.data
-                login(access, refresh) // send tokens to login function form AuthContext
+                const {access, refresh, is_staff} = res.data
+                login(access, refresh, is_staff) // send tokens to login function form AuthContext
 
                 // Reset failed attempts counter on success
                 setFailedAttempts(0);
@@ -92,7 +92,6 @@ const LoginPage = () => {
 
         } catch (err) {
             setFailedAttempts((prev) => prev + 1);
-            console.log(failedAttempts)
             // Generic error message
             const statusError = err.response.status
             if (statusError === 401) {

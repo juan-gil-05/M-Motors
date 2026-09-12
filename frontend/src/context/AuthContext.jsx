@@ -25,6 +25,7 @@ export const AuthProvider = ({ children }) => {
     const [token, setToken] = useState(() => localStorage.getItem(ACCESS_TOKEN));
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isAdmin, setIsAdmin] = useState(false);
 
     // Initialize auth state on app start
     useEffect(() => {
@@ -38,12 +39,13 @@ export const AuthProvider = ({ children }) => {
     /**
      * Handle login: store token and update state
      */
-    const login = (accessToken, refreshToken) => {
+    const login = (accessToken, refreshToken, isAdmin) => {
         localStorage.setItem(ACCESS_TOKEN, accessToken);
         if (refreshToken) {
             localStorage.setItem(REFRESH_TOKEN, refreshToken);
         }
         setToken(accessToken);
+        setIsAdmin(isAdmin);
     };
 
     /**
@@ -54,11 +56,11 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem(REFRESH_TOKEN);
         setToken(null);
         setUser(null);
+        setIsAdmin(false);
     };
 
     // Check if user is authenticated (if token exists the user is authenticated)
     const isAuthenticated = !!token;
-
 
     return (
         <AuthContext.Provider
@@ -66,6 +68,7 @@ export const AuthProvider = ({ children }) => {
                 token,
                 user,
                 isAuthenticated,
+                isAdmin,
                 loading,
                 login,
                 logout,

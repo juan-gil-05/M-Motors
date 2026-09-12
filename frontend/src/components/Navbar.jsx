@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -5,9 +6,8 @@ import { useAuth } from '../context/AuthContext';
 import { Menu, CircleUserRound } from "lucide-react"
 
 export default function Navbar() {
-    const { isAuthenticated, logout } = useAuth();
+    const { isAuthenticated, logout, isAdmin } = useAuth();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
     const navigate = useNavigate()
 
     const handleLogout = () => {
@@ -42,6 +42,12 @@ export default function Navbar() {
                         {isAuthenticated ?
                             // Shown only when user is logged in
                             <Link to="/" className="hover:text-blue-600 transition-colors">Mes dossiers</Link>
+                            :
+                            <></>
+                        }
+                        {isAdmin ?
+                            // Shown only when user is the Admin
+                            <Link to="/" className="hover:text-blue-600 transition-colors">Véhicules</Link>
                             :
                             <></>
                         }
