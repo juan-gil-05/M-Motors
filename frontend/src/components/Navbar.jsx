@@ -47,7 +47,7 @@ export default function Navbar() {
                         }
                         {isAdmin ?
                             // Shown only when user is the Admin
-                            <Link to="/" className="hover:text-blue-600 transition-colors">Véhicules</Link>
+                            <Link to="/vehicules" className="hover:text-blue-600 transition-colors">Véhicules</Link>
                             :
                             <></>
                         }
