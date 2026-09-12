@@ -2,7 +2,8 @@ from rest_framework import viewsets
 from django.contrib.auth.models import User
 from .serializers import UserSerializer
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
-
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -31,4 +32,16 @@ class UserViewSet(viewsets.ModelViewSet):
         
         # Non-admin users are restricted to their own user instance
         return User.objects.filter(id=user.id)
-    
+
+# Class to custom response from TokenObtainPairView
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+
+        # Extra responses
+        data['username'] = self.user.username
+        data['is_staff'] = self.user.is_staff
+        return data
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
