@@ -33,15 +33,31 @@ services:
     env_file:
       - ./.env
 
-  # 3. Frontend service (React + Vite)
-  frontend:
-    build: ./frontend
-    container_name: m-motors_frontend
+  # 3. Frontend services
+  # Dev mode
+  frontend-dev:
+    build:
+      context: ./frontend
+      target: dev
+    container_name: m-motors_frontend_dev
+    working_dir: /app
     volumes:
       - ./frontend:/app
-      - /app/node_modules # Avoid to install twice the node_modules
+      - /app/node_modules
     ports:
       - "5173:5173"
+    command: sh -lc "npm install && npm run dev -- --host 0.0.0.0"
+    depends_on:
+      - backend
+
+  # Prod mode
+  frontend-prod:
+    build:
+      context: ./frontend
+      target: production
+    container_name: m-motors_frontend_prod
+    ports:
+      - "80:80"
     depends_on:
       - backend
 
