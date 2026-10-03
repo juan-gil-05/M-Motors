@@ -139,6 +139,12 @@ class VehicleSerializer(serializers.ModelSerializer):
         cover_index = validated_data.pop('cover_photo_index', 0)
         lease_details_data = validated_data.pop('lease_details', None)
         
+        # If the contract type is "location", the lease details musn't be empty
+        if(validated_data['contract_type'].name == "location" and not lease_details_data):
+            raise serializers.ValidationError(
+                {"lease_details_error": "vous debez indiquer les conditions de location."}
+        )
+        
         # Create the vehicle
         vehicle = Vehicle.objects.create(**validated_data)
         
