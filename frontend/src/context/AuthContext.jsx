@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from 'react';
-import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants"
+import { ACCESS_TOKEN, REFRESH_TOKEN, IS_ADMIN } from "../constants"
 
 
 // 1. Create Context
@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
     const [token, setToken] = useState(() => localStorage.getItem(ACCESS_TOKEN));
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [isAdmin, setIsAdmin] = useState(false);
+    const [admin, setAdmin] = useState(() => localStorage.getItem(IS_ADMIN));
 
     // Initialize auth state on app start
     useEffect(() => {
@@ -39,13 +39,16 @@ export const AuthProvider = ({ children }) => {
     /**
      * Handle login: store token and update state
      */
-    const login = (accessToken, refreshToken, isAdmin) => {
+    const login = (accessToken, refreshToken, admin) => {
         localStorage.setItem(ACCESS_TOKEN, accessToken);
         if (refreshToken) {
             localStorage.setItem(REFRESH_TOKEN, refreshToken);
         }
+        if (admin) {
+            localStorage.setItem(IS_ADMIN, admin);
+        }
         setToken(accessToken);
-        setIsAdmin(isAdmin);
+        setAdmin(admin);
     };
 
     /**
@@ -54,13 +57,15 @@ export const AuthProvider = ({ children }) => {
     const logout = () => {
         localStorage.removeItem(ACCESS_TOKEN);
         localStorage.removeItem(REFRESH_TOKEN);
+        localStorage.removeItem(IS_ADMIN);
         setToken(null);
         setUser(null);
-        setIsAdmin(false);
+        setAdmin(null);
     };
 
     // Check if user is authenticated (if token exists the user is authenticated)
     const isAuthenticated = !!token;
+    const isAdmin = !!admin
 
     return (
         <AuthContext.Provider

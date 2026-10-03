@@ -1,10 +1,8 @@
 /* eslint-disable no-unused-vars */
 import { useState } from 'react';
 import { useNavigate, Link, data } from 'react-router-dom';
-import { ChartNoAxesColumnIcon, CodeSquare, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import api from '../api/api'
-import LoadingSpinner from '../components/LoadingSpinner';
-import {ACCESS_TOKEN, REFRESH_TOKEN} from "../constants"
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext';
 
