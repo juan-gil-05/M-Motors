@@ -1,61 +1,147 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react-hooks/immutability */
 /* eslint-disable no-unused-vars */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Upload, Info, Sliders, FileText } from 'lucide-react';
 import api from '../api/api';
+import toast from 'react-hot-toast'
+
 
 const AddVehiclePage = () => {
+
+  const navigate = useNavigate()
+
   // Form input state
   const [formData, setFormData] = useState({
-    brand: '',
-    model: '',
-    year: '2024',
-    mileage: '0',
-    transmission: 'manuel',
-    fuel_type: 'essence',
-    contract_type: 'location', // Default 'location' matching mockup
-    price: '',
-    lease_duration_months: '12',
-    annual_included_mileage: '10000',
-    final_purchase_price: '',
+    make: "",
+    model: "",
+    kilometres: "",
+    gearbox: "",
+    fuel: "",
+    contract_type: "",
+    price: "",
+    status: 1, // Disponible Status by default
+    lease_details: {
+      commitment_time: "",
+      kilometres_per_year: "",
+      final_purchase_price: "",
+    },
+    images: [
+      {
+        image: "",
+        is_main: false
+      }
+    ]
   });
+
 
   // Photo management states
   const [photos, setPhotos] = useState([]);
   const [coverIndex, setCoverIndex] = useState(0);
 
   // Status feedback states
-  const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  /**
-   * Universal input change handler
-   */
+  // vehicle data states
+  const [markerData, setMarkerData] = useState([])
+  const [modelData, setModelData] = useState([])
+  const [gearboxData, setGearboxData] = useState([])
+  const [fuelData, setFuelData] = useState([])
+  const [contractTypeData, setContractTypeData] = useState([])
+
+  // functions to get and show the differents form options
+  useEffect(() => {
+    listVehicleMakers(),
+      listVehicleModelsByMakerId()
+  }, [formData.make])
+
+  useEffect(() => {
+    listVehicleGearboxes(),
+      listVehicleFuels(),
+      listVehicleContracTypes()
+  }, [])
+
+
+  // List all vehicle makers
+  const listVehicleMakers = async () => {
+    try {
+      const res = await api.get(`/vehicle_api/makers`)
+      setMarkerData(res.data)
+    } catch (error) {
+      setErrorMessage(error.message)
+    }
+  }
+  // List vehicle models by the maker id
+  const listVehicleModelsByMakerId = async () => {
+    try {
+      const makerId = formData.make ? formData.make : 0
+      const res = await api.get(`/vehicle_api/models?maker_id=${makerId}`)
+      setModelData(res.data)
+    } catch (error) {
+      setErrorMessage(error.message)
+    }
+  }
+  // List all vehicle gearboxes
+  const listVehicleGearboxes = async () => {
+    try {
+      const res = await api.get(`/vehicle_api/gearboxes`)
+      setGearboxData(res.data)
+    } catch (error) {
+      setErrorMessage(error.message)
+    }
+  }
+  //List all vehicle fuels
+  const listVehicleFuels = async () => {
+    try {
+      const res = await api.get(`/vehicle_api/fuels`)
+      setFuelData(res.data)
+    } catch (error) {
+      setErrorMessage(error.message)
+    }
+  }
+  //List all vehicle contract types
+  const listVehicleContracTypes = async () => {
+    try {
+      const res = await api.get(`/vehicle_api/contractType`)
+      setContractTypeData(res.data)
+    } catch (error) {
+      setErrorMessage(error.message)
+    }
+  }
+
+
+
+  // Universal input change handler
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  /**
-   * Handle file selections for vehicle photos
-   */
+  // Lease Details object input change handler
+  const handleLeaseDetailsInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, lease_details: { ...formData.lease_details, [name]: value } });
+  }
+
+
+  //  Handle file selections for vehicle photos
   const handlePhotoUpload = (e) => {
     const files = Array.from(e.target.files);
     if (files.length > 0) {
       const newPhotoObjects = files.map((file) => ({
         file,
-        previewUrl: URL.createObjectURL(file),
+        previewUrl: URL.createObjectURL(file), // to show a previsialization of the image
       }));
       setPhotos((prev) => [...prev, ...newPhotoObjects]);
     }
   };
 
-  /**
-   * Form submit handler
-   */
+
+  //  Form submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSuccessMessage('');
     setErrorMessage('');
 
     if (photos.length === 0) {
@@ -65,11 +151,19 @@ const AddVehiclePage = () => {
 
     setIsSubmitting(true);
 
-    // Prepare multipart form data payload
+    // Prepare form data payload
     const data = new FormData();
     Object.keys(formData).forEach((key) => {
-      data.append(key, formData[key]);
+      if (key !== 'lease_details' && key !== 'images') {
+        data.append(key, formData[key]);
+      }
     });
+
+    // add lease details object to formdata payload only if contract type is location (id = 2)
+    if (formData.lease_details && formData.contract_type == 2) {
+      data.append('lease_details', JSON.stringify(formData.lease_details));
+    }
+
 
     photos.forEach((photoObj) => {
       data.append('uploaded_photos', photoObj.file);
@@ -78,35 +172,42 @@ const AddVehiclePage = () => {
     data.append('cover_photo_index', coverIndex);
 
     try {
-      const response = await api.post('/vehicles/', data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const response = await api.post('/vehicle_api/vehicles/', data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
-      // Display required success notification criteria
-      setSuccessMessage('Le véhicule a bien été ajouté');
-      
       // Reset form on success
       setFormData({
-        brand: '',
-        model: '',
-        year: '2024',
-        mileage: '0',
-        transmission: 'manuel',
-        fuel_type: 'essence',
-        contract_type: 'location',
-        price: '',
-        lease_duration_months: '12',
-        annual_included_mileage: '10000',
-        final_purchase_price: '',
+        make: "",
+        model: "",
+        kilometres: "",
+        gearbox: "",
+        fuel: "",
+        contract_type: "",
+        price: "",
+        status: 1, // Disponible Status by default
+        lease_details: {
+          commitment_time: "",
+          kilometres_per_year: "",
+          final_purchase_price: "",
+        },
+        images: [
+          {
+            image: "",
+            is_main: false
+          }
+        ]
       });
       setPhotos([]);
       setCoverIndex(0);
+      navigate('/vehicules');
+      // Display success message
+      toast.success('Le véhicule a bien été ajouté')
     } catch (err) {
-      if (err.response?.data) {
-        setErrorMessage('Veuillez vérifier les champs renseignés.');
-      } else {
-        setErrorMessage('Une erreur est survenue lors de l\'ajout du véhicule.');
-      }
+      setErrorMessage('Une erreur est survenue lors de l\'ajout du véhicule.');
+
     } finally {
       setIsSubmitting(false);
     }
@@ -115,7 +216,7 @@ const AddVehiclePage = () => {
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-6xl mx-auto space-y-6">
-        
+
         {/* Header Title */}
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Nouveau véhicule</h1>
@@ -123,11 +224,6 @@ const AddVehiclePage = () => {
         </div>
 
         {/* Feedback Alerts */}
-        {successMessage && (
-          <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-sm font-medium">
-            {successMessage}
-          </div>
-        )}
         {errorMessage && (
           <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-sm font-medium">
             {errorMessage}
@@ -135,60 +231,54 @@ const AddVehiclePage = () => {
         )}
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* Main Left Columns: Form Inputs */}
           <div className="lg:col-span-2 space-y-6">
-            
+
             {/* Section 1: Information Générale */}
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
               <div className="flex items-center gap-2 text-slate-900 font-semibold text-lg">
                 <Info className="w-5 h-5 text-blue-600" />
                 <h2>Information générale</h2>
               </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Brand */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Marque</label>
-                  <input
-                    type="text"
-                    name="brand"
-                    required
-                    value={formData.brand}
-                    onChange={handleInputChange}
-                    placeholder="Sélectionner la marque"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-600"
-                  />
+                  <select name="make" required onChange={handleInputChange} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-600">
+                    <option value="">Sélectionner la marque</option>
+                    {markerData.length > 0 && (
+                      markerData.map((marker) => (
+                        <option key={marker.id} value={marker.id}  >
+                          {marker.name}
+                        </option>
+                      ))
+                    )}
+                  </select>
                 </div>
+                {/* Model */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Modèle</label>
-                  <input
-                    type="text"
-                    name="model"
-                    required
-                    value={formData.model}
-                    onChange={handleInputChange}
-                    placeholder="Sélectionner le modèle"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-600"
-                  />
+                  <select name="model" required onChange={handleInputChange} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-600">
+                    <option value="">Sélectionner le modèle</option>
+                    {modelData.length > 0 && (
+                      modelData.map((model) => (
+                        <option key={model.id} value={model.id}  >
+                          {model.name} (Anée: {model.year})
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  <p className='block text-xs font-liht text-slate-600 m-1 '>Veuillez choisir tout d'abord la marque</p>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Année</label>
-                  <input
-                    type="number"
-                    name="year"
-                    required
-                    value={formData.year}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-600"
-                  />
-                </div>
-                <div>
+                {/* kilometers */}
+                <div className='col-span-2'>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Kilométrage</label>
                   <input
-                    type="number"
-                    name="mileage"
+                    type="number" min={0}
+                    name="kilometres"
                     required
-                    value={formData.mileage}
+                    value={formData.kilometres}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-600"
                   />
@@ -202,32 +292,33 @@ const AddVehiclePage = () => {
                 <Sliders className="w-5 h-5 text-blue-600" />
                 <h2>Spécifications Techniques</h2>
               </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Gearboxes */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Boîte de vitesses</label>
-                  <select
-                    name="transmission"
-                    value={formData.transmission}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-600"
-                  >
-                    <option value="manuel">Manuel</option>
-                    <option value="automatique">Automatique</option>
+                  <select name="gearbox" required onChange={handleInputChange} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-600">
+                    <option value="">Sélectionner la boîte de vitesses</option>
+                    {gearboxData.length > 0 && (
+                      gearboxData.map((gearbox) => (
+                        <option key={gearbox.id} value={gearbox.id}  >
+                          {gearbox.name}
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
+                {/* Fuel */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Énergie</label>
-                  <select
-                    name="fuel_type"
-                    value={formData.fuel_type}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-600"
-                  >
-                    <option value="essence">Essence</option>
-                    <option value="gasoil">Gasoil</option>
-                    <option value="electrique">Électrique</option>
-                    <option value="gaz_naturel">Gaz naturel</option>
+                  <select name="fuel" required onChange={handleInputChange} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-600">
+                    <option value="">Sélectionner l'énergie</option>
+                    {fuelData.length > 0 && (
+                      fuelData.map((fuel) => (
+                        <option key={fuel.id} value={fuel.id}  >
+                          {fuel.name}
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
               </div>
@@ -242,39 +333,34 @@ const AddVehiclePage = () => {
 
               {/* Radio options */}
               <div className="space-y-2">
-                <label className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50">
-                  <input
-                    type="radio"
-                    name="contract_type"
-                    value="vente"
-                    checked={formData.contract_type === 'vente'}
-                    onChange={handleInputChange}
-                    className="w-4 h-4 text-blue-600"
-                  />
-                  <span className="text-sm font-medium text-slate-800">Vente directe</span>
-                </label>
 
-                <label className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50">
-                  <input
-                    type="radio"
-                    name="contract_type"
-                    value="location"
-                    checked={formData.contract_type === 'location'}
-                    onChange={handleInputChange}
-                    className="w-4 h-4 text-blue-600"
-                  />
-                  <span className="text-sm font-medium text-slate-800">Location avec option d'achat</span>
-                </label>
+                {contractTypeData.length > 0 && (
+                  contractTypeData.map((contractType) => (
+                    <>
+                      <label className="flex items-center gap-3 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50" key={contractType.id}>
+                        <input type="radio" required
+                          name="contract_type"
+                          key={contractType.id}
+                          value={contractType.id}
+                          onChange={handleInputChange}
+                          className="w-4 h-4 text-blue-600"
+                        />
+                        <span className="text-sm font-medium text-slate-800">{contractType.name}</span>
+                      </label>
+                    </>
+                  ))
+                )}
               </div>
 
               {/* Dynamic Inputs based on Contract Type */}
               <div className="space-y-4 pt-2">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    {formData.contract_type === 'location' ? 'Loyer mensuel (€/Mois)' : 'Prix de vente (€)'}
+                    {/* {formData.contract_type === 'location' ? 'Loyer mensuel (€/Mois)' : 'Prix de vente (€)'} */}
+                    {formData.contract_type === "2" ? 'Loyer mensuel (€/Mois)' : 'Prix de vente (€)'}
                   </label>
                   <input
-                    type="number"
+                    type="number" min={0}
                     step="0.01"
                     name="price"
                     required
@@ -284,8 +370,8 @@ const AddVehiclePage = () => {
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-600"
                   />
                 </div>
-
-                {formData.contract_type === 'location' && (
+                {/* 1 = Vente, 2 = Location */}
+                {formData.contract_type === "2" && (
                   <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
@@ -293,11 +379,13 @@ const AddVehiclePage = () => {
                           Durée du contrat (Mois)
                         </label>
                         <select
-                          name="lease_duration_months"
-                          value={formData.lease_duration_months}
-                          onChange={handleInputChange}
+                          required
+                          name="commitment_time" min={0}
+                          value={formData.lease_details.commitment_time}
+                          onChange={handleLeaseDetailsInputChange}
                           className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-600"
                         >
+                          <option value="">Sélectionner la durée du contrat</option>
                           <option value="12">12 mois</option>
                           <option value="24">24 mois</option>
                           <option value="36">36 mois</option>
@@ -310,11 +398,13 @@ const AddVehiclePage = () => {
                           Kilométrage annuel inclus (km/an)
                         </label>
                         <select
-                          name="annual_included_mileage"
-                          value={formData.annual_included_mileage}
-                          onChange={handleInputChange}
+                          required
+                          name="kilometres_per_year"
+                          value={formData.lease_details.kilometres_per_year}
+                          onChange={handleLeaseDetailsInputChange}
                           className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-600"
                         >
+                          <option value="">Sélectionner le kilométrage</option>
                           <option value="10000">10 000 km</option>
                           <option value="15000">15 000 km</option>
                           <option value="20000">20 000 km</option>
@@ -328,12 +418,12 @@ const AddVehiclePage = () => {
                         Option d'achat finale (€)
                       </label>
                       <input
-                        type="number"
+                        type="number" min={0}
                         step="0.01"
                         name="final_purchase_price"
                         required
-                        value={formData.final_purchase_price}
-                        onChange={handleInputChange}
+                        value={formData.lease_details.final_purchase_price}
+                        onChange={handleLeaseDetailsInputChange}
                         placeholder="0.00"
                         className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-600"
                       />
@@ -351,6 +441,7 @@ const AddVehiclePage = () => {
 
               {/* Upload Dropzone */}
               <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 hover:bg-slate-100/60 cursor-pointer transition-colors text-center">
+                {/* upload icon */}
                 <Upload className="w-8 h-8 text-blue-600 mb-2" />
                 <span className="text-xs font-medium text-slate-700">
                   Glissez vos photos ici ou parcourez vos fichiers
@@ -373,9 +464,8 @@ const AddVehiclePage = () => {
                   <div
                     key={index}
                     onClick={() => setCoverIndex(index)}
-                    className={`relative rounded-lg overflow-hidden border-2 cursor-pointer aspect-video bg-slate-100 ${
-                      coverIndex === index ? 'border-blue-600 ring-2 ring-blue-600/20' : 'border-slate-200'
-                    }`}
+                    className={`relative rounded-lg overflow-hidden border-2 cursor-pointer aspect-video bg-slate-100 ${coverIndex === index ? 'border-blue-600 ring-2 ring-blue-600/20' : 'border-slate-200'
+                      }`}
                   >
                     <img
                       src={photo.previewUrl}
@@ -392,7 +482,7 @@ const AddVehiclePage = () => {
               </div>
             </div>
 
-            {/* Action Buttons matching Mockup */}
+            {/* Action Buttons */}
             <div className="flex gap-3">
               <button
                 type="button"
@@ -410,8 +500,8 @@ const AddVehiclePage = () => {
             </div>
           </div>
         </form>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };
 
