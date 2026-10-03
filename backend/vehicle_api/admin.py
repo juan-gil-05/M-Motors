@@ -4,7 +4,7 @@ from .models import (
     Fuel,
     Gearbox,
     ContractType,
-    Make,
+    Maker,
     Model,
     Vehicle,
     LeaseDetail,
@@ -16,7 +16,7 @@ admin.site.register(Status)
 admin.site.register(Fuel)
 admin.site.register(Gearbox)
 admin.site.register(ContractType)
-admin.site.register(Make)
+admin.site.register(Maker)
 admin.site.register(Model)
 admin.site.register(Vehicle)
 admin.site.register(LeaseDetail)

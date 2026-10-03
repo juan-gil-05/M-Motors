@@ -38,7 +38,7 @@ class ContractType(models.Model):
         return self.name
 
 
-class Make(models.Model): 
+class Maker(models.Model): 
     name = models.CharField(max_length=100)
 
     def __str__(self):
@@ -48,7 +48,7 @@ class Make(models.Model):
 class Model(models.Model):
     name = models.CharField(max_length=255)
     year = models.SmallIntegerField()
-    maker = models.ForeignKey(Make, on_delete=models.CASCADE, related_name="models")
+    maker = models.ForeignKey(Maker, on_delete=models.CASCADE, related_name="models")
 
     def __str__(self):
         return f"{self.maker.name} {self.name} ({self.year})"
@@ -94,7 +94,8 @@ class LeaseDetail(models.Model):
 
 
 class Image(models.Model):
-    image_path = models.CharField(max_length=500)
+    # Django send automatically the image into cloudinary and stock in DB the url cloudinary retourned
+    image = models.ImageField(upload_to='m_motors/vehicles/')
     is_main = models.BooleanField(default=False)
     vehicle = models.ForeignKey(
         Vehicle, on_delete=models.CASCADE, related_name="images"
