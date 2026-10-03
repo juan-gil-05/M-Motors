@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import *
+import json
 
 
 class StatusSerializer(serializers.ModelSerializer):
@@ -26,14 +27,14 @@ class ContractTypeSerializer(serializers.ModelSerializer):
         fields = ["id", "name"]
 
 
-class MakeSerializer(serializers.ModelSerializer):
+class MakerSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Make
+        model = Maker
         fields = ["id", "name"]
 
 
 class ModelSerializer(serializers.ModelSerializer):
-    maker = MakeSerializer(read_only=True)
+    maker = MakerSerializer(read_only=True)
 
     class Meta:
         model = Model
@@ -43,9 +44,14 @@ class ModelSerializer(serializers.ModelSerializer):
 class ImageSerializer(serializers.ModelSerializer):
     # Require to false in order to update the images, see update function in vehicleSerialaizer
     id = serializers.IntegerField(required=False)
+    """
+    Serializer exposing Cloudinary image URL.
+    """
+    # Cloudinary image URL will automatically be serialized as a string
+    image_url = serializers.ImageField(source='image', read_only=True)
     class Meta:
         model = Image
-        fields = ["id", "image_path", "is_main"]
+        fields = ["id", "image_url", "is_main"]
         extra_kwargs = {"id" : {"read_only" : False}}
         
 
@@ -65,6 +71,14 @@ class VehicleSerializer(serializers.ModelSerializer):
     owner = serializers.PrimaryKeyRelatedField(read_only=True)
     images = ImageSerializer(many=True, required=False)
     lease_details = LeaseDetailSerializer(required=False, allow_null=True)
+    
+    # Only to receive the files and the index in (POST/PUT)
+    uploaded_photos = serializers.ListField(
+        child=serializers.ImageField(),
+        write_only=True,
+        required=False
+    )
+    cover_photo_index = serializers.IntegerField(write_only=True, default=0)
 
     class Meta:
         model = Vehicle
@@ -82,24 +96,65 @@ class VehicleSerializer(serializers.ModelSerializer):
             "status",
             "images",
             "lease_details",
+            "uploaded_photos",
+            "cover_photo_index",
         ]
+
+    
+    def to_internal_value(self, data):
+        # 1. copy of data in Request/QueryDict
+        if hasattr(data, 'dict'):
+            # transform the QueryDict in python dict
+            data_dict = data.dict()
+            # if images are sent, they are stocked in dictionary
+            if hasattr(data, 'getlist') and 'uploaded_photos' in data:
+                data_dict['uploaded_photos'] = data.getlist('uploaded_photos')
+        else:
+            data_dict = dict(data)
+
+        # 2. transform lease_details into JSON format
+        lease_details = data_dict.get('lease_details')
+        if isinstance(lease_details, str) and lease_details.strip():
+            try:
+                parsed_lease = json.loads(lease_details)
+                
+                # Clean the data if lease details is empty
+                if isinstance(parsed_lease, dict):
+                    cleaned_lease = {}
+                    for k, v in parsed_lease.items():
+                        cleaned_lease[k] = None if v == "" else v
+                    data_dict['lease_details'] = cleaned_lease
+                else:
+                    data_dict['lease_details'] = parsed_lease
+
+            except (ValueError, TypeError):
+                data_dict['lease_details'] = None
+
+        return super().to_internal_value(data_dict)
 
     # Function to create a vehicle with the images and the lease details, in the request POST
     def create(self, validated_data):
-        # Take images and lease details over the principal request
-        images_data = validated_data.pop('images', [])
+        # Take images, lease details and cover index over the principal request
+        uploaded_photos = validated_data.pop('uploaded_photos', [])
+        cover_index = validated_data.pop('cover_photo_index', 0)
         lease_details_data = validated_data.pop('lease_details', None)
         
         # Create the vehicle
         vehicle = Vehicle.objects.create(**validated_data)
         
-        # If there is the lease details, create with the vehicle we just create 
-        if lease_details_data :
+        # If there are the lease details, create with the vehicle we just created
+        if lease_details_data and any(lease_details_data.values()):
             LeaseDetail.objects.create(vehicle=vehicle, **lease_details_data)
             
-        # Create the images for the vehicle we just create 
-        for image_data in images_data:
-            Image.objects.create(vehicle=vehicle, **image_data)
+        # 2. Upload automaticaly to Cloudinary
+        for index, photo_file in enumerate(uploaded_photos):
+            is_main = (index == cover_index)
+            # Stock the models.ImageField, and django-cloudinary-storage sends the image to Cloudinary
+            Image.objects.create(
+                vehicle=vehicle,
+                image=photo_file,
+                is_main=is_main
+            )
             
         return vehicle
 
@@ -115,7 +170,7 @@ class VehicleSerializer(serializers.ModelSerializer):
         
                         
         # Intelligent update of lease details
-        if lease_details_data is not None:
+        if lease_details_data is not None and any(lease_details_data.values()):
             # step A : The vehicle has already some leasing details
             if hasattr(instance, 'lease_details') and instance.lease_details:
                 lease_detail = instance.lease_details

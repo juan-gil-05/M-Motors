@@ -5,14 +5,15 @@ from rest_framework import status
 from .models import *
 from .serializers import *
 from application_api.models import Application 
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
 class VehicleViewSet(viewsets.ModelViewSet):
     queryset = Vehicle.objects.all().exclude(owner__isnull=False)
     serializer_class = VehicleSerializer
+    authentication_classes = [JWTAuthentication] # Force the usage of JWT
 
     def get_permissions(self):
-        # List of permissions that this view accepts
         # If the action is a method (GET), anyone can access it
         if self.action in ["list", "retrieve"]:
             permission_classes = [IsAuthenticatedOrReadOnly]
@@ -38,3 +39,93 @@ class VehicleViewSet(viewsets.ModelViewSet):
         else:
             # if the 'force' param is set to true, the vehicle is deleted
             return super().destroy(request, *args,  **kwargs)
+        
+        
+class MakerViewSet(viewsets.ModelViewSet):
+    serializer_class = MakerSerializer
+    
+    def get_permissions(self):
+        # If the action is a method (GET), anyone authenticated can access it
+        if self.action in ["list", "retrieve"]:
+            permission_classes = [IsAuthenticatedOrReadOnly]
+        else:
+            # If it's a modification (POST, PUT, PATCH, DELETE), it MUST be an Admin (is_staff=True)
+            permission_classes = [IsAdminUser]
+
+        return [permission() for permission in permission_classes]
+    
+    def get_queryset(self):
+        return Maker.objects.all()
+    
+    
+class ModelViewSet(viewsets.ModelViewSet):
+    serializer_class = ModelSerializer
+    
+    def get_permissions(self):
+        # If the action is a method (GET), anyone authenticated can access it
+        if self.action in ["list", "retrieve"]:
+            permission_classes = [IsAuthenticatedOrReadOnly]
+        else:
+            # If it's a modification (POST, PUT, PATCH, DELETE), it MUST be an Admin (is_staff=True)
+            permission_classes = [IsAdminUser]
+
+        return [permission() for permission in permission_classes]
+    
+    def get_queryset(self):
+        res = Model.objects.all()
+        # Filter the models by maker ID
+        makerId = self.request.query_params.get("maker_id")
+        if makerId is not None:
+            res = res.filter(maker_id=makerId)
+        return res
+    
+    
+class GearboxViewSet(viewsets.ModelViewSet):
+    serializer_class = GearboxSerializer
+    
+    def get_permissions(self):
+        # If the action is a method (GET), anyone authenticated can access it
+        if self.action in ["list", "retrieve"]:
+            permission_classes = [IsAuthenticatedOrReadOnly]
+        else:
+            # If it's a modification (POST, PUT, PATCH, DELETE), it MUST be an Admin (is_staff=True)
+            permission_classes = [IsAdminUser]
+
+        return [permission() for permission in permission_classes]
+    
+    def get_queryset(self):
+        return Gearbox.objects.all()
+    
+      
+class FuelViewSet(viewsets.ModelViewSet):
+    serializer_class = FuelSerializer
+    
+    def get_permissions(self):
+        # If the action is a method (GET), anyone authenticated can access it
+        if self.action in ["list", "retrieve"]:
+            permission_classes = [IsAuthenticatedOrReadOnly]
+        else:
+            # If it's a modification (POST, PUT, PATCH, DELETE), it MUST be an Admin (is_staff=True)
+            permission_classes = [IsAdminUser]
+
+        return [permission() for permission in permission_classes]
+    
+    def get_queryset(self):
+        return Fuel.objects.all()
+    
+    
+class ContractTypeViewSet(viewsets.ModelViewSet):
+    serializer_class = ContractTypeSerializer
+
+    def get_permissions(self):
+        # If the action is a method (GET), anyone authenticated can access it
+        if self.action in ["list", "retrieve"]:
+            permission_classes = [IsAuthenticatedOrReadOnly]
+        else:
+            # If it's a modification (POST, PUT, PATCH, DELETE), it MUST be an Admin (is_staff=True)
+            permission_classes = [IsAdminUser]
+
+        return [permission() for permission in permission_classes]
+
+    def get_queryset(self):
+        return ContractType.objects.all()
