@@ -1,4 +1,5 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, filters
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
@@ -12,6 +13,18 @@ class VehicleViewSet(viewsets.ModelViewSet):
     queryset = Vehicle.objects.all().exclude(owner__isnull=False)
     serializer_class = VehicleSerializer
     authentication_classes = [JWTAuthentication] # Force the usage of JWT
+    
+    # Configure DRF filters for searching, filtering and ordering
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    
+    # Traverse foreign keys: model -> maker -> name
+    search_fields = ['model__name', 'model__maker__name']
+    
+    # Exact filtering on type and status
+    filterset_fields = ['contract_type', 'status']
+    
+    # Orderable fields
+    ordering_fields = ['price', 'created_at']
 
     def get_permissions(self):
         # If the action is a method (GET), anyone can access it

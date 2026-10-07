@@ -9,6 +9,7 @@ import AddVehiclePage from './pages/AddVehicle';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
+import VehicleListPage from './pages/VehicleList';
 
 export default function App() {
   return (
@@ -26,7 +27,8 @@ export default function App() {
             
               {/* Only admin can acces to this routes */}
               <Route element={<AdminProtectedRoute />}>
-                <Route path="/vehicules" element={<AddVehiclePage />} ></Route>
+                <Route path="/nouveau-vehicule" element={<AddVehiclePage />} ></Route>
+                <Route path="/vehicules" element={<VehicleListPage />} ></Route>
               </Route>
             </Route>
           </Routes>
