@@ -319,7 +319,7 @@ const VehicleListPage = () => {
                         <td className="py-4 px-6">
                           <div className="flex items-center justify-center gap-3">
                             <button
-                              onClick={() => navigate(`/vehicules/${vehicle.id}`)}
+                              onClick={() => navigate(`/vehicule/${vehicle.id}`)}
                               title="Voir les détails"
                               className="text-slate-400 hover:text-slate-600 transition-colors"
                             >

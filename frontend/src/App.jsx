@@ -23,7 +23,7 @@ export default function App() {
             <Route path="/connexion" element={< LoginPage />} />
             <Route path="/mentions-legales" element={<LegalMentions />} />
             <Route path="/non-autorise" element={<Unauthorized />} />
-            <Route path="/vehicules/:id" element={<VehicleDetails />} />
+            <Route path="/vehicule/:id" element={<VehicleDetails />} />
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
             
