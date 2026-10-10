@@ -11,7 +11,9 @@ from rest_framework.pagination import PageNumberPagination
 
 
 class VehicleViewSet(viewsets.ModelViewSet):
-    queryset = Vehicle.objects.all().exclude(owner__isnull=False)
+    queryset = Vehicle.objects.all().exclude(owner__isnull=False).select_related(
+        'model__maker', 'contract_type', 'gearbox', 'fuel', 'status', 'lease_details'
+    ).prefetch_related('images')
     serializer_class = VehicleSerializer
     authentication_classes = [JWTAuthentication] # Force the usage of JWT
     

@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 import VehicleListPage from './pages/VehicleList';
 import AddOrModifyVehicle from './pages/AddOrModifyVehicle';
+import VehicleDetails from './pages/VehicleDetails';
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
             <Route path="/connexion" element={< LoginPage />} />
             <Route path="/mentions-legales" element={<LegalMentions />} />
             <Route path="/non-autorise" element={<Unauthorized />} />
+            <Route path="/vehicles/:id" element={<VehicleDetails />} />
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
             
