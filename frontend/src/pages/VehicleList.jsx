@@ -157,7 +157,7 @@ const VehicleListPage = () => {
           </div>
 
           <button
-            onClick={() => navigate('/nouveau-vehicule')}
+            onClick={() => navigate('/vehicule')}
             className="w-full sm:w-auto px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm whitespace-nowrap"
           >
             <Plus className="w-4 h-4" />
@@ -326,7 +326,7 @@ const VehicleListPage = () => {
                               <Eye className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => navigate(`/vehicles/${vehicle.id}/edit`)}
+                              onClick={() => navigate(`/vehicule`, {state: vehicle})}
                               title="Modifier"
                               className="text-blue-500 hover:text-blue-700 transition-colors"
                             >

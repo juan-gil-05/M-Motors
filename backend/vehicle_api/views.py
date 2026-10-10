@@ -7,6 +7,7 @@ from .models import *
 from .serializers import *
 from application_api.models import Application 
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.pagination import PageNumberPagination
 
 
 class VehicleViewSet(viewsets.ModelViewSet):
@@ -54,8 +55,12 @@ class VehicleViewSet(viewsets.ModelViewSet):
             return super().destroy(request, *args,  **kwargs)
         
         
+class MakerPagination(PageNumberPagination):
+    page_size = 100
+
 class MakerViewSet(viewsets.ModelViewSet):
     serializer_class = MakerSerializer
+    pagination_class = MakerPagination
     
     def get_permissions(self):
         # If the action is a method (GET), anyone authenticated can access it

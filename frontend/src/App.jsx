@@ -5,11 +5,11 @@ import LegalMentions from './pages/LegalMentions';
 import Unauthorized from './pages/Unauthorized';
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/Login';
-import AddVehiclePage from './pages/AddVehicle';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 import VehicleListPage from './pages/VehicleList';
+import AddOrModifyVehicle from './pages/AddOrModifyVehicle';
 
 export default function App() {
   return (
@@ -27,7 +27,7 @@ export default function App() {
             
               {/* Only admin can acces to this routes */}
               <Route element={<AdminProtectedRoute />}>
-                <Route path="/nouveau-vehicule" element={<AddVehiclePage />} ></Route>
+                <Route path="/vehicule" element={<AddOrModifyVehicle />} ></Route>
                 <Route path="/vehicules" element={<VehicleListPage />} ></Route>
               </Route>
             </Route>

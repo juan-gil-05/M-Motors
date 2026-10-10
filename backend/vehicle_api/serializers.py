@@ -42,18 +42,23 @@ class ModelSerializer(serializers.ModelSerializer):
 
 
 class ImageSerializer(serializers.ModelSerializer):
-    # Require to false in order to update the images, see update function in vehicleSerialaizer
     id = serializers.IntegerField(required=False)
+    uploaded_photo_index = serializers.IntegerField(
+        min_value=0,
+        required=False,
+        write_only=True,
+    )
     """
     Serializer exposing Cloudinary image URL.
     """
     # Cloudinary image URL will automatically be serialized as a string
     image_url = serializers.ImageField(source='image', read_only=True)
+
     class Meta:
         model = Image
-        fields = ["id", "image_url", "is_main"]
-        extra_kwargs = {"id" : {"read_only" : False}}
-        
+        fields = ["id", "image_url", "is_main", "uploaded_photo_index"]
+        extra_kwargs = {"id": {"read_only": False}}
+
 
 class LeaseDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -130,6 +135,16 @@ class VehicleSerializer(serializers.ModelSerializer):
             except (ValueError, TypeError):
                 data_dict['lease_details'] = None
 
+        # 3. transform images into JSON format
+        images = data_dict.get('images')
+        if isinstance(images, str):
+            try:
+                data_dict['images'] = json.loads(images)
+            except (ValueError, TypeError) as exc:
+                raise serializers.ValidationError(
+                    {"images": "Must be a valid JSON list."}
+                ) from exc
+
         return super().to_internal_value(data_dict)
 
     # Function to create a vehicle with the images and the lease details, in the request POST
@@ -165,12 +180,14 @@ class VehicleSerializer(serializers.ModelSerializer):
         return vehicle
 
 
-    # Function to update a vehicle with the images and the lease details, in the request POST
+    # Function to update a vehicle with the images and the lease details, in the request PUT
     def update(self, instance, validated_data):
-        # Take images and lease details over the principal request
-        images_data = validated_data.pop('images', [])
+        # Take images, lease details and cover index over the principal request
+        uploaded_photos = validated_data.pop('uploaded_photos', [])
+        cover_index = validated_data.pop('cover_photo_index', 0)
+        images_data = validated_data.pop('images', None)
         lease_details_data = validated_data.pop('lease_details', None)
-        
+
         # Update the vehicle data
         instance = super().update(instance, validated_data)
         
@@ -186,32 +203,45 @@ class VehicleSerializer(serializers.ModelSerializer):
             # step B : The vehicle was to sold, but now it has some lease details
             else:
                 LeaseDetail.objects.create(vehicle=instance, **lease_details_data)
-        # step C : The vehicle was to lease, but now it is to sold, so i delete the lease details
-        elif 'lease_details' != self.initial_data:
+        # Remove lease details only when explicitly cleared or when changing to a sale.
+        elif 'lease_details' in self.initial_data or instance.contract_type.name != "location":
             if hasattr(instance, 'lease_details') and instance.lease_details:
                 instance.lease_details.delete()
             
             
-        # Intelligent update of images
+        # Accept images only when the request includes the complete image list.
         if images_data is not None:
-            # Take all the images IDs sent in the request 
-            # if the image doesn't have un id it's because it's a new one, that hasn't been created yet
-            keep_image_ids = [img.get('id') for img in images_data if img.get('id') is not None]
-
-            # step A : Delete all the images that are not int he ids sent  
+            # Delete the vehicles images that are not in the list sent into the request 
+            keep_image_ids = [
+                image_data['id']
+                for image_data in images_data
+                if 'id' in image_data
+            ]
             instance.images.exclude(id__in=keep_image_ids).delete()
 
-            # step B : images list sent in the request
-            for image_item in images_data:
-                image_id = image_item.get('id')
-
-                if image_id:
-                    # If image ID exists, the image does already exist in the bdd, so update the changes
-                    Image.objects.filter(id=image_id, vehicle=instance).update(**image_item)
+            for index, image_data in enumerate(images_data):
+                is_main = index == cover_index
+                if 'id' in image_data:
+                    image = instance.images.get(id=image_data['id'])
+                    if image.is_main != is_main:
+                        image.is_main = is_main
+                        image.save(update_fields=['is_main'])
                 else:
-                    # If the image doesn't have an ID, it's a new one and we have to created 
-                    Image.objects.create(vehicle=instance, **image_item)
-        
+                    photo_index = image_data['uploaded_photo_index']
+                    Image.objects.create(
+                        vehicle=instance,
+                        image=uploaded_photos[photo_index],
+                        is_main=is_main,
+                    )
+        elif uploaded_photos:
+            has_main_image = instance.images.filter(is_main=True).exists()
+            for index, photo_file in enumerate(uploaded_photos):
+                Image.objects.create(
+                    vehicle=instance,
+                    image=photo_file,
+                    is_main=not has_main_image and index == cover_index,
+                )
+
         return instance
     
     def to_representation(self, instance):
