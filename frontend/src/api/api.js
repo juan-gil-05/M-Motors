@@ -53,8 +53,14 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const isAuthenticationRequest = originalRequest?.url?.includes("api/token/");
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !isAuthenticationRequest &&
+      !originalRequest._retry
+    ) {
       originalRequest._retry = true;
 
       try {

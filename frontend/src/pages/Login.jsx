@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 
 const LoginPage = () => {
     const navigate = useNavigate();
-    const {login} = useAuth() // login function from authContext
+    const { login } = useAuth() // login function from authContext
 
 
     // Form input states
@@ -77,7 +77,7 @@ const LoginPage = () => {
             })
 
             if (res.status === 200) {
-                const {access, refresh, is_staff} = res.data
+                const { access, refresh, is_staff } = res.data
                 login(access, refresh, is_staff) // send tokens to login function form AuthContext
 
                 // Reset failed attempts counter on success
@@ -91,7 +91,7 @@ const LoginPage = () => {
         } catch (err) {
             setFailedAttempts((prev) => prev + 1);
             // Generic error message
-            const statusError = err.response.status
+            const statusError = err.response?.status
             if (statusError === 401) {
                 setErrorMessage("E-mail ou mot de passe incorrect.")
             } else {
