@@ -63,6 +63,24 @@ class VehicleCreateAPITestCase(APITestCase):
         file_obj.seek(0)
         return SimpleUploadedFile(name, file_obj.read(), content_type='image/jpeg')
 
+    def _create_vehicle_with_images(self, image_count=1):
+        vehicle = Vehicle.objects.create(
+            model=self.model,
+            kilometres=15000,
+            gearbox=self.gearbox,
+            fuel=self.fuel,
+            contract_type=self.contract_type_sale,
+            price='18500.00',
+            status=self.status,
+        )
+        for index in range(image_count):
+            Image.objects.create(
+                vehicle=vehicle,
+                image=self._generate_test_image(f'original-{index}.jpg'),
+                is_main=index == 0,
+            )
+        return vehicle
+
     def test_admin_can_create_sale_vehicle(self):
         """
         Verify successful vehicle creation for standard sale contract.
@@ -131,3 +149,54 @@ class VehicleCreateAPITestCase(APITestCase):
 
         response = self.client.post(self.url, self.genericPayload, format='multipart')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_put_preserves_existing_images_when_images_field_is_omitted(self):
+        self.client.force_authenticate(user=self.admin_user)
+        vehicle = self._create_vehicle_with_images()
+
+        response = self.client.put(
+            reverse('vehicle-detail', args=[vehicle.id]),
+            self.genericPayload,
+            format='multipart',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertEqual(vehicle.images.count(), 1)
+
+    def test_put_keeps_existing_image_and_adds_uploaded_image_as_cover(self):
+        self.client.force_authenticate(user=self.admin_user)
+        vehicle = self._create_vehicle_with_images()
+        existing_image = vehicle.images.get()
+
+        payload = {
+            **self.genericPayload,
+            'images': '[{"id": %d}, {"uploaded_photo_index": 0}]' % existing_image.id,
+            'uploaded_photos': [self._generate_test_image('new.jpg')],
+            'cover_photo_index': 1,
+        }
+        response = self.client.put(
+            reverse('vehicle-detail', args=[vehicle.id]),
+            payload,
+            format='multipart',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertEqual(vehicle.images.count(), 2)
+        self.assertEqual(vehicle.images.filter(is_main=True).count(), 1)
+        self.assertEqual(vehicle.images.get(is_main=True).image.name, 'm_motors/vehicles/new.jpg')
+
+    def test_put_removes_images_only_when_empty_list_is_explicitly_sent(self):
+        self.client.force_authenticate(user=self.admin_user)
+        vehicle = self._create_vehicle_with_images()
+
+        response = self.client.put(
+            reverse('vehicle-detail', args=[vehicle.id]),
+            {
+                **self.genericPayload,
+                'images': '[]',
+            },
+            format='multipart',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertEqual(vehicle.images.count(), 0)
