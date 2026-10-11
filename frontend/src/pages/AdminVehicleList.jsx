@@ -1,15 +1,15 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Search, 
-  Plus, 
-  SlidersHorizontal, 
-  ArrowUpDown, 
-  Eye, 
-  Pencil, 
-  Trash2, 
-  AlertTriangle 
+import {
+  Search,
+  Plus,
+  SlidersHorizontal,
+  ArrowUpDown,
+  Eye,
+  Pencil,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import api from '../api/api';
 import CarDefaultImg from "../assets/car_default.webp"
@@ -38,6 +38,7 @@ const AdminVehicleList = () => {
   // Deletion modal states
   const [vehicleToDelete, setVehicleToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [linkedApplicationsWarning, setLinkedApplicationsWarning] = useState('');
 
   /**
    * Fetch vehicles list from backend API with active filters, ordering, and pagination
@@ -54,7 +55,7 @@ const AdminVehicleList = () => {
       };
 
       const response = await api.get('/vehicle_api/vehicles/', { params });
-      
+
       setVehicles(response.data.results || response.data);
       setTotalEntries(response.data.count || response.data.length);
       setTotalPages(Math.ceil((response.data.count || response.data.length) / pageSize));
@@ -90,16 +91,32 @@ const AdminVehicleList = () => {
     if (!vehicleToDelete) return;
     setIsDeleting(true);
     try {
-      await api.delete(`/vehicle_api/vehicles/${vehicleToDelete.id}/`);
+      const requestConfig = linkedApplicationsWarning ? { params: { force: true } } : undefined;
+      await api.delete(`/vehicle_api/vehicles/${vehicleToDelete.id}/`, requestConfig);
       setVehicleToDelete(null);
+      setLinkedApplicationsWarning('');
       fetchVehicles();
       // Display success message
       toast.success('Le véhicule a été supprimé avec succès.')
     } catch (error) {
-      console.error('Failed to delete vehicle:', error);
+      if (error.response && error.response.status === 409) {
+        setLinkedApplicationsWarning(
+          error.response.data?.message ||
+          'Ce véhicule est lié à des dossiers. Sa suppression supprimera également les dossiers associés.'
+        );
+      } else {
+        toast.error(error.response?.data?.message || 'La suppression du véhicule a échoué.');
+        console.error('Failed to delete vehicle:', error);
+      }
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const closeDeleteModal = () => {
+    if (isDeleting) return;
+    setVehicleToDelete(null);
+    setLinkedApplicationsWarning('');
   };
 
   /**
@@ -166,7 +183,7 @@ const AdminVehicleList = () => {
         </div>
 
         {/* Filter Toolbar */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center gap-6"> 
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center gap-6">
           <div className="flex items-center gap-2 text-slate-700 font-semibold text-sm">
             <SlidersHorizontal className="w-4 h-4" />
             <span>Filtrer par :</span>
@@ -180,11 +197,10 @@ const AdminVehicleList = () => {
                 setSelectedType(selectedType === 'vente' ? '' : '1');
                 setCurrentPage(1);
               }}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                selectedType === '1'
+              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${selectedType === '1'
                   ? 'bg-blue-600 text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
+                }`}
             >
               Vente
             </button>
@@ -193,11 +209,10 @@ const AdminVehicleList = () => {
                 setSelectedType(selectedType === 'location' ? '' : '2');
                 setCurrentPage(1);
               }}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                selectedType === '2'
+              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${selectedType === '2'
                   ? 'bg-blue-600 text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
+                }`}
             >
               Location
             </button>
@@ -211,11 +226,10 @@ const AdminVehicleList = () => {
                 setSelectedStatus(selectedStatus === 'disponible' ? '' : '1');
                 setCurrentPage(1);
               }}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                selectedStatus === '1'
+              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${selectedStatus === '1'
                   ? 'bg-blue-600 text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
+                }`}
             >
               Disponible
             </button>
@@ -224,11 +238,10 @@ const AdminVehicleList = () => {
                 setSelectedStatus(selectedStatus === 'vendue' ? '' : '2');
                 setCurrentPage(1);
               }}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                selectedStatus === '2'
+              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${selectedStatus === '2'
                   ? 'bg-blue-600 text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
+                }`}
             >
               Vendue
             </button>
@@ -237,11 +250,10 @@ const AdminVehicleList = () => {
                 setSelectedStatus(selectedStatus === 'louee' ? '' : '3');
                 setCurrentPage(1);
               }}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                selectedStatus === '3'
+              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${selectedStatus === '3'
                   ? 'bg-blue-600 text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
+                }`}
             >
               Louée
             </button>
@@ -326,14 +338,17 @@ const AdminVehicleList = () => {
                               <Eye className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => navigate(`/vehicule`, {state: vehicle})}
+                              onClick={() => navigate(`/vehicule`, { state: vehicle })}
                               title="Modifier"
                               className="text-blue-500 hover:text-blue-700 transition-colors"
                             >
                               <Pencil className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => setVehicleToDelete(vehicle)}
+                              onClick={() => {
+                                setLinkedApplicationsWarning('');
+                                setVehicleToDelete(vehicle);
+                              }}
                               title="Supprimer"
                               className="text-rose-500 hover:text-rose-700 transition-colors"
                             >
@@ -358,21 +373,20 @@ const AdminVehicleList = () => {
 
             <div className="flex items-center gap-1">
               <button
-                onClick={() => currentPage === totalPages ? setCurrentPage((prev) => prev - 1) : setCurrentPage((prev) => prev + 1) }
+                onClick={() => currentPage === totalPages ? setCurrentPage((prev) => prev - 1) : setCurrentPage((prev) => prev + 1)}
                 className="px-3 py-1.5 rounded border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-50 text-slate-700"
               >
-              {currentPage === totalPages ? "Précédente" : "Suivante"}  
+                {currentPage === totalPages ? "Précédente" : "Suivante"}
               </button>
 
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  className={`px-3 py-1.5 rounded text-xs font-semibold ${
-                    currentPage === page
+                  className={`px-3 py-1.5 rounded text-xs font-semibold ${currentPage === page
                       ? 'bg-blue-600 text-white'
                       : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
-                  }`}
+                    }`}
                 >
                   {page}
                 </button>
@@ -393,22 +407,38 @@ const AdminVehicleList = () => {
       {/* Confirmation Modal for Vehicle Deletion */}
       {vehicleToDelete && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl space-y-4">
-            <div className="flex items-center gap-3 text-rose-600">
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-vehicle-title"
+            className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl space-y-4"
+          >
+            <div className={`flex items-center gap-3 ${linkedApplicationsWarning ? 'text-amber-600' : 'text-rose-600'}`}>
               <AlertTriangle className="w-6 h-6" />
-              <h3 className="text-lg font-bold text-slate-900">Confirmer la suppression</h3>
+              <h3 id="delete-vehicle-title" className="text-lg font-bold text-slate-900">
+                {linkedApplicationsWarning ? 'Dossiers associés détectés' : 'Confirmer la suppression'}
+              </h3>
             </div>
             <p className="text-sm text-slate-600">
-              Êtes-vous sûr de vouloir supprimer le véhicule{' '}
+              {linkedApplicationsWarning ? 'Véhicule concerné : ' : 'Êtes-vous sûr de vouloir supprimer le véhicule '}
               <span className="font-semibold text-slate-800">
                 {vehicleToDelete.model.maker.name} {vehicleToDelete.model.name}
-              </span>{' '}
-              ? Cette action est irrreversible.
+              </span>
+              {!linkedApplicationsWarning && ' ? Cette action est irréversible.'}
             </p>
+            {linkedApplicationsWarning && (
+              <>
+                <p className="text-sm text-slate-700">{linkedApplicationsWarning}</p>
+                <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-800">
+                  La suppression du véhicule entraînera également celle de tous les dossiers qui lui sont associés. Cette action est irréversible.
+                </p>
+              </>
+            )}
             <div className="flex justify-end gap-3 pt-2">
               <button
-                onClick={() => setVehicleToDelete(null)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
+                onClick={closeDeleteModal}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
               >
                 Annuler
               </button>
@@ -417,7 +447,7 @@ const AdminVehicleList = () => {
                 disabled={isDeleting}
                 className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
               >
-                {isDeleting ? 'Suppression...' : 'Supprimer'}
+                {isDeleting ? 'Suppression...' : linkedApplicationsWarning ? 'Supprimer le véhicule et les dossiers' : 'Supprimer'}
               </button>
             </div>
           </div>
