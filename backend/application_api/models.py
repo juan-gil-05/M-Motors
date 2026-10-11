@@ -17,6 +17,7 @@ class Status(models.Model):
 
 class Application(models.Model):
     reject_justification = models.TextField(null=True, blank=True)
+    data_processing_consent = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(
@@ -34,7 +35,12 @@ class Application(models.Model):
 
 
 class Document(models.Model):
+    class DocumentType(models.TextChoices):
+        IDENTITY = "identity", "Identity document"
+        DRIVING_LICENSE = "driving_license", "Driving license"
+
     document_path = models.CharField(max_length=500)
+    document_type = models.CharField(max_length=30, choices=DocumentType.choices)
     application = models.ForeignKey(
         Application, on_delete=models.CASCADE, related_name="documents"
     )

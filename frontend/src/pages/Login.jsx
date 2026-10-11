@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { useState } from 'react';
-import { useNavigate, Link, data } from 'react-router-dom';
+import { useNavigate, useLocation, Link, data } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import api from '../api/api'
 import toast from 'react-hot-toast'
@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext';
 
 const LoginPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { login } = useAuth() // login function from authContext
 
 
@@ -84,7 +85,7 @@ const LoginPage = () => {
                 setFailedAttempts(0);
 
                 // Redirect user to homepage
-                navigate('/');
+                navigate(location.state?.from || '/');
                 toast.success('Connexion reussi!')
             }
 

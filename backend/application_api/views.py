@@ -11,6 +11,10 @@ class ApplicationViewset(viewsets.ModelViewSet):
         user = self.request.user
         # Only the admin can see all the applications
         if user.is_staff:
-            return Application.objects.all()
-        return Application.objects.filter(user=user)
-    
+            return Application.objects.select_related('user', 'vehicle', 'status').prefetch_related('documents')
+        return Application.objects.filter(user=user).select_related(
+            'user', 'vehicle', 'status'
+        ).prefetch_related('documents')
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
