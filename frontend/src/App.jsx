@@ -9,6 +9,7 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 import VehicleListPage from './pages/VehicleList';
+import AdminVehicleList from './pages/AdminVehicleList';
 import AddOrModifyVehicle from './pages/AddOrModifyVehicle';
 import VehicleDetails from './pages/VehicleDetails';
 
@@ -23,6 +24,7 @@ export default function App() {
             <Route path="/connexion" element={< LoginPage />} />
             <Route path="/mentions-legales" element={<LegalMentions />} />
             <Route path="/non-autorise" element={<Unauthorized />} />
+            <Route path="/vehicules" element={<VehicleListPage />} />
             <Route path="/vehicule/:id" element={<VehicleDetails />} />
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
@@ -30,7 +32,7 @@ export default function App() {
               {/* Only admin can acces to this routes */}
               <Route element={<AdminProtectedRoute />}>
                 <Route path="/vehicule" element={<AddOrModifyVehicle />} ></Route>
-                <Route path="/vehicules" element={<VehicleListPage />} ></Route>
+                <Route path="/admin/vehicules" element={<AdminVehicleList />} ></Route>
               </Route>
             </Route>
           </Routes>

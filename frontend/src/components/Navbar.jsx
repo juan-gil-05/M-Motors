@@ -36,8 +36,8 @@ export default function Navbar() {
 
                     {/* Nav Links Desktop */}
                     <div className="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-700">
-                        <Link to="/" className="hover:text-blue-600 transition-colors">Acheter</Link>
-                        <Link to="/" className="hover:text-blue-600 transition-colors">Louer</Link>
+                        <Link to="/vehicules?type=achat" className="hover:text-blue-600 transition-colors">Acheter</Link>
+                        <Link to="/vehicules?type=location" className="hover:text-blue-600 transition-colors">Louer</Link>
                         {isAuthenticated ?
                             // Shown only when user is logged in
                             <Link to="/" className="hover:text-blue-600 transition-colors">Mes dossiers</Link>
@@ -46,7 +46,7 @@ export default function Navbar() {
                         }
                         {isAdmin ?
                             // Shown only when user is the Admin
-                            <Link to="/vehicules" className="hover:text-blue-600 transition-colors">Véhicules</Link>
+                            <Link to="/admin/vehicules" className="hover:text-blue-600 transition-colors">Véhicules</Link>
                             :
                             <></>
                         }
@@ -82,8 +82,8 @@ export default function Navbar() {
             {/* Burger menu Mobile */}
             {isMobileMenuOpen && (
                 <div className="md:hidden bg-white border-b border-gray-200 px-4 pt-2 pb-4 space-y-3">
-                    <Link to="/" className="block text-slate-700 font-medium">Acheter</Link>
-                    <Link to="/" className="block text-slate-700 font-medium">Louer</Link>
+                    <Link to="/vehicules?type=achat" className="block text-slate-700 font-medium">Acheter</Link>
+                    <Link to="/vehicules?type=location" className="block text-slate-700 font-medium">Louer</Link>
                     <Link to="/" className="block text-slate-700 font-medium">Mes dossiers</Link>
                     <div className="pt-2 flex flex-col gap-2">
                         <Link to="/inscription" className="w-full text-center bg-blue-600 text-white py-2 rounded-lg text-sm font-medium">S'inscrire</Link>

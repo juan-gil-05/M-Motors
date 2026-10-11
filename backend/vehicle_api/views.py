@@ -1,4 +1,5 @@
 from rest_framework import viewsets, filters
+from django_filters import rest_framework as django_filters
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser
 from rest_framework.response import Response
@@ -55,6 +56,48 @@ class VehicleViewSet(viewsets.ModelViewSet):
         else:
             # if the 'force' param is set to true, the vehicle is deleted
             return super().destroy(request, *args,  **kwargs)
+
+
+class VehicleCatalogFilter(django_filters.FilterSet):
+    maker = django_filters.NumberFilter(field_name='model__maker_id')
+    min_price = django_filters.NumberFilter(field_name='price', lookup_expr='gte')
+    max_price = django_filters.NumberFilter(field_name='price', lookup_expr='lte')
+    max_kilometres = django_filters.NumberFilter(field_name='kilometres', lookup_expr='lte')
+    year = django_filters.NumberFilter(field_name='model__year')
+    fuel = django_filters.NumberFilter(field_name='fuel_id')
+    gearbox = django_filters.NumberFilter(field_name='gearbox_id')
+    contract_type = django_filters.CharFilter(method='filter_contract_type')
+
+    def filter_contract_type(self, queryset, name, value):
+        contract_type_ids = [item for item in value.split(',') if item.isdigit()]
+        if not contract_type_ids:
+            return queryset.none() if value else queryset
+        return queryset.filter(contract_type_id__in=contract_type_ids)
+
+    class Meta:
+        model = Vehicle
+        fields = []
+
+
+class VehicleCatalogPagination(PageNumberPagination):
+    page_size = 6
+
+
+class VehicleCatalogViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = VehicleSerializer
+    pagination_class = VehicleCatalogPagination
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_class = VehicleCatalogFilter
+    ordering_fields = ['price']
+    ordering = ['-price']
+
+    def get_queryset(self):
+        return Vehicle.objects.filter(
+            owner__isnull=True,
+            status__name__iexact='Disponible',
+        ).select_related(
+            'model__maker', 'contract_type', 'gearbox', 'fuel', 'status', 'lease_details'
+        ).prefetch_related('images')
         
         
 class MakerPagination(PageNumberPagination):

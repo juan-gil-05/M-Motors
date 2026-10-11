@@ -4,6 +4,7 @@ from .views import *
 
 router = DefaultRouter()
 router.register(r'vehicles', VehicleViewSet, basename='vehicle')
+router.register(r'catalog/vehicles', VehicleCatalogViewSet, basename='vehicle-catalog')
 router.register(r'makers', MakerViewSet, basename="maker")
 router.register(r'models', ModelViewSet, basename="model")
 router.register(r'gearboxes', GearboxViewSet, basename="gearbox")
