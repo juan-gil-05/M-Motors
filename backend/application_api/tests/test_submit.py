@@ -66,6 +66,13 @@ class ApplicationSubmissionAPITestCase(APITestCase):
             set(application.documents.values_list('document_type', flat=True)),
             {Document.DocumentType.IDENTITY, Document.DocumentType.DRIVING_LICENSE},
         )
+        self.assertEqual(
+            dict(application.documents.values_list('document_type', 'file_extension')),
+            {
+                Document.DocumentType.IDENTITY: '.pdf',
+                Document.DocumentType.DRIVING_LICENSE: '.png',
+            },
+        )
         for document in application.documents.all():
             filename = document.document_path.rsplit('/', 1)[-1].rsplit('.', 1)[0]
             self.assertEqual(len(filename), 32)
