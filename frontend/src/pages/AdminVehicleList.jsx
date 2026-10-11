@@ -198,8 +198,8 @@ const AdminVehicleList = () => {
                 setCurrentPage(1);
               }}
               className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${selectedType === '1'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
             >
               Vente
@@ -210,8 +210,8 @@ const AdminVehicleList = () => {
                 setCurrentPage(1);
               }}
               className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${selectedType === '2'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
             >
               Location
@@ -227,8 +227,8 @@ const AdminVehicleList = () => {
                 setCurrentPage(1);
               }}
               className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${selectedStatus === '1'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
             >
               Disponible
@@ -239,8 +239,8 @@ const AdminVehicleList = () => {
                 setCurrentPage(1);
               }}
               className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${selectedStatus === '2'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
             >
               Vendue
@@ -251,12 +251,25 @@ const AdminVehicleList = () => {
                 setCurrentPage(1);
               }}
               className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${selectedStatus === '3'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
             >
               Louée
             </button>
+            {(selectedType || selectedStatus) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedType('');
+                  setSelectedStatus('');
+                  setCurrentPage(1);
+                }}
+                className="ml-2 text-sm font-semibold text-blue-700 underline underline-offset-2"
+              >
+                Réinitialiser
+              </button>
+            )}
           </div>
         </div>
 
@@ -384,8 +397,8 @@ const AdminVehicleList = () => {
                   key={page}
                   onClick={() => setCurrentPage(page)}
                   className={`px-3 py-1.5 rounded text-xs font-semibold ${currentPage === page
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
                     }`}
                 >
                   {page}
