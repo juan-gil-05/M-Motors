@@ -127,6 +127,20 @@ export default function VehicleListPage() {
     return () => { active = false; };
   }, []);
 
+  // To update the contract type sent by the url
+  useEffect(() => {
+    const requestedTypes = queryType === 'achat' || queryType === 'location' ? [queryType] : [];
+    const requestedTypesKey = requestedTypes.join(',');
+
+    setFilters((current) => current.types.join(',') === requestedTypesKey
+      ? current
+      : { ...current, types: requestedTypes });
+    setAppliedFilters((current) => current.types.join(',') === requestedTypesKey
+      ? current
+      : { ...current, types: requestedTypes });
+    setPage(1);
+  }, [queryType]);
+
   // Get all the vehicles passing the filter params 
   const fetchVehicles = useCallback(async () => {
     if (!optionsLoaded) return;
