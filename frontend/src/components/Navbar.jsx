@@ -36,17 +36,21 @@ export default function Navbar() {
 
                     {/* Nav Links Desktop */}
                     <div className="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-700">
-                        <Link to="/vehicules?type=achat" className="hover:text-blue-600 transition-colors">Acheter</Link>
-                        <Link to="/vehicules?type=location" className="hover:text-blue-600 transition-colors">Louer</Link>
-                        {isAuthenticated ?
+                        {!isAdmin && <Link to="/vehicules?type=achat" className="hover:text-blue-600 transition-colors">Acheter</Link>}
+                        {!isAdmin && <Link to="/vehicules?type=location" className="hover:text-blue-600 transition-colors">Louer</Link>}
+                        {isAuthenticated && !isAdmin ?
                             // Shown only when user is logged in
                             <Link to="/" className="hover:text-blue-600 transition-colors">Mes dossiers</Link>
                             :
                             <></>
                         }
                         {isAdmin ?
-                            // Shown only when user is the Admin
-                            <Link to="/admin/vehicules" className="hover:text-blue-600 transition-colors">Véhicules</Link>
+                            // Admin navigation includes vehicle inventory and submitted applications.
+                            <>
+                                <Link to="/vehicules" className="hover:text-blue-600 transition-colors">Catalogue</Link>
+                                <Link to="/admin/vehicules" className="hover:text-blue-600 transition-colors">Véhicules</Link>
+                                <Link to="/admin/dossiers" className="hover:text-blue-600 transition-colors">Dossiers</Link>
+                            </>
                             :
                             <></>
                         }
@@ -54,7 +58,16 @@ export default function Navbar() {
 
                     {/* Auth Buttons Desktop */}
                     <div className="hidden md:flex items-center space-x-3">
-                        {isAuthenticated ?
+                        {isAdmin ? (
+                            <>
+                                <div className="flex items-center gap-3 rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-800">
+                                    <CircleUserRound className="h-5 w-5" /> Administrateur
+                                </div>
+                                <button onClick={handleLogout} className="bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition cursor-pointer">
+                                    Se déconnecter
+                                </button>
+                            </>
+                        ) : isAuthenticated ?
                             <button onClick={handleLogout} className="bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition cursor-pointer">
                                 Se déconnecter
                             </button>
@@ -72,9 +85,29 @@ export default function Navbar() {
 
                     {/* Mobile Profile Icon */}
                     <div className="md:hidden">
-                        <Link to="/connexion" className="text-slate-800">
-                            <CircleUserRound />
-                        </Link>
+                        {isAdmin ? (
+                            <div className='flex gap-2'>
+                                <div className="flex items-center gap-3 rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-800">
+                                    <CircleUserRound className="h-5 w-5" /> Administrateur
+                                </div>
+                                <button onClick={handleLogout} className="bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition cursor-pointer">
+                                    Se déconnecter
+                                </button>
+                            </div>
+                        ) : isAuthenticated ?
+                            <button onClick={handleLogout} className="bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition cursor-pointer">
+                                Se déconnecter
+                            </button>
+                            :
+                            <div className='flex gap-2'>
+                                <Link to="/connexion" className="bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition">
+                                    Se connecter
+                                </Link>
+                                <Link to="/inscription" className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-700 transition">
+                                    S'inscrire
+                                </Link>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -82,13 +115,11 @@ export default function Navbar() {
             {/* Burger menu Mobile */}
             {isMobileMenuOpen && (
                 <div className="md:hidden bg-white border-b border-gray-200 px-4 pt-2 pb-4 space-y-3">
-                    <Link to="/vehicules?type=achat" className="block text-slate-700 font-medium">Acheter</Link>
-                    <Link to="/vehicules?type=location" className="block text-slate-700 font-medium">Louer</Link>
-                    <Link to="/" className="block text-slate-700 font-medium">Mes dossiers</Link>
-                    <div className="pt-2 flex flex-col gap-2">
-                        <Link to="/inscription" className="w-full text-center bg-blue-600 text-white py-2 rounded-lg text-sm font-medium">S'inscrire</Link>
-                        <Link to="/connexion" className="w-full text-center bg-blue-700 text-white py-2 rounded-lg text-sm font-medium">Se connecter</Link>
-                    </div>
+                    {!isAdmin && <Link to="/vehicules?type=achat" className="block text-slate-700 font-medium">Acheter</Link>}
+                    {!isAdmin && <Link to="/vehicules?type=location" className="block text-slate-700 font-medium">Louer</Link>}
+                    {isAuthenticated && !isAdmin && <Link to="/" className="block text-slate-700 font-medium">Mes dossiers</Link>}
+                    {isAdmin && <Link to="/admin/dossiers" className="block text-slate-700 font-medium">Dossiers</Link>}
+                    {isAdmin && <Link to="/admin/vehicules" className="block text-slate-700 font-medium">Véhicules</Link>}
                 </div>
             )}
         </nav>

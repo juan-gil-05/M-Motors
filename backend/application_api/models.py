@@ -41,6 +41,7 @@ class Document(models.Model):
 
     document_path = models.CharField(max_length=500)
     document_type = models.CharField(max_length=30, choices=DocumentType.choices)
+    file_extension = models.CharField(max_length=10, blank=True, default='')
     application = models.ForeignKey(
         Application, on_delete=models.CASCADE, related_name="documents"
     )

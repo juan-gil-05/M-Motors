@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 import VehicleListPage from './pages/VehicleList';
 import AdminVehicleList from './pages/AdminVehicleList';
+import AdminApplications from './pages/AdminApplications';
 import AddOrModifyVehicle from './pages/AddOrModifyVehicle';
 import VehicleDetails from './pages/VehicleDetails';
 
@@ -33,6 +34,7 @@ export default function App() {
               <Route element={<AdminProtectedRoute />}>
                 <Route path="/vehicule" element={<AddOrModifyVehicle />} ></Route>
                 <Route path="/admin/vehicules" element={<AdminVehicleList />} ></Route>
+                <Route path="/admin/dossiers" element={<AdminApplications />} ></Route>
               </Route>
             </Route>
           </Routes>

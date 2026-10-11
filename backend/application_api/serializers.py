@@ -19,7 +19,7 @@ MAX_DOCUMENT_SIZE = 10 * 1024 * 1024
 class DocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Document
-        fields = ['id', 'document_type', 'document_path']
+        fields = ['id', 'document_type', 'file_extension']
 
 
 class ApplicationStatusSerializer(serializers.ModelSerializer):
@@ -30,7 +30,7 @@ class ApplicationStatusSerializer(serializers.ModelSerializer):
 
 class ApplicationSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True)
-    status = serializers.PrimaryKeyRelatedField(queryset=Status.objects.all(), required=False)
+    status = serializers.PrimaryKeyRelatedField(read_only=True)
     vehicle = serializers.PrimaryKeyRelatedField(
         queryset=Vehicle.objects.filter(owner__isnull=True, status__name__iexact='Disponible')
     )
@@ -106,6 +106,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
                 application=application,
                 document_type=document_type,
                 document_path=stored_path,
+                file_extension=extension,
             )
 
         return application
