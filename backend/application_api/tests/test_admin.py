@@ -137,7 +137,7 @@ class AdminApplicationAPITestCase(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
-    def test_only_admin_can_view_uploaded_documents(self):
+    def test_application_owner_and_admin_can_view_uploaded_documents(self):
         document = self.application.documents.get()
         url = reverse(
             'application-document-content',
@@ -145,8 +145,13 @@ class AdminApplicationAPITestCase(APITestCase):
         )
 
         self.client.force_authenticate(user=self.customer)
+        owner_response = self.client.get(url)
+        self.assertEqual(owner_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(b''.join(owner_response.streaming_content), b'%PDF-1.4 identity')
+
+        self.client.force_authenticate(user=self.other_customer)
         forbidden_response = self.client.get(url)
-        self.assertEqual(forbidden_response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(forbidden_response.status_code, status.HTTP_404_NOT_FOUND)
 
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(url)
@@ -154,6 +159,15 @@ class AdminApplicationAPITestCase(APITestCase):
         self.assertEqual(response['Content-Type'], 'application/pdf')
         self.assertIn('filename="piece-identite.pdf"', response['Content-Disposition'])
         self.assertEqual(b''.join(response.streaming_content), b'%PDF-1.4 identity')
+
+    def test_application_detail_includes_last_updated_timestamp(self):
+        self.client.force_authenticate(user=self.customer)
+
+        response = self.client.get(self.detail_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('updated_at', response.data)
+        self.assertIsNotNone(response.data['updated_at'])
 
     def test_document_cannot_be_fetched_through_another_application_id(self):
         document = self.application.documents.get()
