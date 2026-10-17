@@ -47,13 +47,14 @@ class ApplicationSerializer(serializers.ModelSerializer):
             'vehicle',
             'status',
             'created_at',
+            'updated_at',
             'reject_justification',
             'data_processing_consent',
             'identity_document',
             'driving_license',
             'documents',
         ]
-        read_only_fields = ['created_at', 'reject_justification']
+        read_only_fields = ['created_at', 'updated_at', 'reject_justification']
 
     def validate_identity_document(self, uploaded_file):
         return self._validate_document(uploaded_file)

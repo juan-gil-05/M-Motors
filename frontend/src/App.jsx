@@ -13,6 +13,8 @@ import AdminVehicleList from './pages/AdminVehicleList';
 import AdminApplications from './pages/AdminApplications';
 import AddOrModifyVehicle from './pages/AddOrModifyVehicle';
 import VehicleDetails from './pages/VehicleDetails';
+import PersonalSpace from './pages/PersonalSpace';
+import ApplicationTracking from './pages/ApplicationTracking';
 
 export default function App() {
   return (
@@ -29,6 +31,8 @@ export default function App() {
             <Route path="/vehicule/:id" element={<VehicleDetails />} />
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
+              <Route path="/espace-personnel" element={<PersonalSpace />} />
+              <Route path="/espace-personnel/dossiers/:id" element={<ApplicationTracking />} />
             
               {/* Only admin can acces to this routes */}
               <Route element={<AdminProtectedRoute />}>

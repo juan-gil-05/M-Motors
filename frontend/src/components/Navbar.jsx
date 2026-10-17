@@ -40,7 +40,7 @@ export default function Navbar() {
                         {!isAdmin && <Link to="/vehicules?type=location" className="hover:text-blue-600 transition-colors">Louer</Link>}
                         {isAuthenticated && !isAdmin ?
                             // Shown only when user is logged in
-                            <Link to="/" className="hover:text-blue-600 transition-colors">Mes dossiers</Link>
+                            <Link to="/espace-personnel" className="hover:text-blue-600 transition-colors">Mes dossiers</Link>
                             :
                             <></>
                         }
@@ -117,7 +117,7 @@ export default function Navbar() {
                 <div className="md:hidden bg-white border-b border-gray-200 px-4 pt-2 pb-4 space-y-3">
                     {!isAdmin && <Link to="/vehicules?type=achat" className="block text-slate-700 font-medium">Acheter</Link>}
                     {!isAdmin && <Link to="/vehicules?type=location" className="block text-slate-700 font-medium">Louer</Link>}
-                    {isAuthenticated && !isAdmin && <Link to="/" className="block text-slate-700 font-medium">Mes dossiers</Link>}
+                    {isAuthenticated && !isAdmin && <Link to="/espace-personnel" className="block text-slate-700 font-medium">Mes dossiers</Link>}
                     {isAdmin && <Link to="/admin/dossiers" className="block text-slate-700 font-medium">Dossiers</Link>}
                     {isAdmin && <Link to="/admin/vehicules" className="block text-slate-700 font-medium">Véhicules</Link>}
                 </div>

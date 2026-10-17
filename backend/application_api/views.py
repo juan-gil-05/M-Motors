@@ -92,10 +92,11 @@ class ApplicationViewset(viewsets.ModelViewSet):
         return self._decide(self.get_object(), 'Refusé', (justification or '').strip() or None)
 
 
+# View to be able to preview and download the application documents
 class ApplicationDocumentContentView(APIView):
     """Stream a application attachment only to an authenticated administrator."""
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated]
 
     @staticmethod
     def _detect_extension(file_handle):
@@ -111,11 +112,17 @@ class ApplicationDocumentContentView(APIView):
         return ''
 
     def get(self, request, application_id, document_id):
-        # Verify that the document belongs to this application.
+        # Scope customer access to their own application while preserving administrator access.
+        applications = Application.objects.all()
+        if not request.user.is_staff:
+            applications = applications.filter(user=request.user)
+        application = get_object_or_404(applications, pk=application_id)
+
+        # Verify that the requested document belongs to the selected application.
         document = get_object_or_404(
             Document.objects.select_related('application'),
             pk=document_id,
-            application_id=application_id,
+            application=application,
         )
         try:
             file_handle = default_storage.open(document.document_path, 'rb')
