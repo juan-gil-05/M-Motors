@@ -20,6 +20,7 @@
 - Espace administrateur pour gérer les véhicules et traiter les dossiers
 - Documentation de l’API avec Swagger et ReDoc
 - Stockage des images et documents avec Cloudinary
+- Suivi des erreurs et des performances avec Sentry (front-end et back-end)
 
 ---
 
@@ -29,6 +30,7 @@
 - **Back-end :** Python 3.11, Django 5.2, Django REST Framework
 - **Base de données :** PostgreSQL 16
 - **Stockage des médias :** Cloudinary
+- **Monitoring :** Sentry
 - **Conteneurs :** Docker Compose, Nginx, Gunicorn
 
 ---
@@ -72,9 +74,20 @@ Pour un lancement sans Docker, il faut également Python 3.11+, Node.js 20+ et P
    CLOUD_NAME=votre_cloud_name
    API_KEY=votre_api_key
    API_SECRET=votre_api_secret
+
+   # Sentry pour le back-end Django
+   SENTRY_DSN=https://votre_cle@o000000.ingest.sentry.io/0000000
    ```
 
-   Les variables Cloudinary sont chargées par Django au démarrage. Gardez `.env` privé et ne le commitez pas.
+   Les variables Cloudinary et `SENTRY_DSN` sont chargées par Django au démarrage. Gardez `.env` privé et ne le commitez pas.
+
+   Pour activer Sentry dans le front-end Vite, créez `frontend/.env` avec le DSN du projet Sentry destiné au navigateur :
+
+   ```dotenv
+   VITE_SENTRY_DSN=https://votre_cle@o000000.ingest.sentry.io/0000000
+   ```
+
+   Le front-end n’initialise Sentry que si `VITE_SENTRY_DSN` est défini. Utilisez le DSN Browser fourni par Sentry et gardez les DSN réels hors du dépôt.
 
 3. **Démarrer les services :**
 
@@ -134,6 +147,13 @@ Le site et son API sont déployés sur **Render** :
 
 - Site web : [https://m-motors-frontend-ohqq.onrender.com](https://m-motors-frontend-ohqq.onrender.com)
 - Documentation : [https://m-motors-9ufv.onrender.com/swagger/](https://m-motors-9ufv.onrender.com/swagger/)
+
+### Monitoring Sentry
+
+Sentry est configuré séparément pour le front-end et le back-end :
+
+- Le back-end Django lit `SENTRY_DSN` depuis son environnement.
+- Le front-end React/Vite lit `VITE_SENTRY_DSN` au moment de la construction ou du démarrage de Vite.
 
 ---
 

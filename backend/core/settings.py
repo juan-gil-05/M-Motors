@@ -2,6 +2,8 @@ from pathlib import Path
 from datetime import timedelta
 import os
 import environ
+import sentry_sdk
+from corsheaders.defaults import default_headers
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -67,6 +69,13 @@ CORS_ALLOWED_ORIGINS = [
     # In Production
     "https://m-motors-frontend-ohqq.onrender.com"
 ]
+
+# Configure CORS allowed headers for "Sentry" monitoring
+CORS_ALLOW_HEADERS = (
+    *default_headers,
+    "baggage",
+    "sentry-trace",
+)
 
 ROOT_URLCONF = "core.urls"
 
@@ -198,3 +207,8 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 
 MEDIA_URL = '/media/'
+
+# App monitoring using Sentry
+sentry_sdk.init(
+    dsn=env("SENTRY_DSN"),
+)
