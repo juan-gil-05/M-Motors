@@ -3,9 +3,11 @@ from django.urls import path, include
 from rest_framework_simplejwt.views import TokenRefreshView
 from user_api.views import MyTokenObtainPairView
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
+from core.health import health_check
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("health/", health_check, name="health-check"),
     
     # JWT Authentication Endpoints
     path("api/token/", MyTokenObtainPairView.as_view(), name="get_token"),

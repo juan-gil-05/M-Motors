@@ -104,6 +104,7 @@ Pour un lancement sans Docker, il faut également Python 3.11+, Node.js 20+ et P
    - Administration Django : [http://localhost:8000/admin/](http://localhost:8000/admin/)
    - Documentation Swagger : [http://localhost:8000/swagger/](http://localhost:8000/swagger/)
    - Documentation ReDoc : [http://localhost:8000/redoc/](http://localhost:8000/redoc/)
+   - Health check : [http://localhost:8000/health/](http://localhost:8000/health/)
 
    Les migrations et la collecte des fichiers statiques sont lancées par le conteneur backend. Pour créer un compte administrateur Django :
 
@@ -138,6 +139,7 @@ docker compose exec backend python manage.py migrate
 - `/vehicle_api/catalog/vehicles/` : catalogue public des véhicules disponibles
 - `/vehicle_api/vehicles/` : gestion des véhicules
 - `/application_api/application/` : dépôt et suivi des dossiers
+- `GET /health/` : état de santé de l’API et de sa connexion à la base de données
 
 ---
 
@@ -154,6 +156,11 @@ Sentry est configuré séparément pour le front-end et le back-end :
 
 - Le back-end Django lit `SENTRY_DSN` depuis son environnement.
 - Le front-end React/Vite lit `VITE_SENTRY_DSN` au moment de la construction ou du démarrage de Vite.
+
+### Monitoring de disponibilité avec Better Stack Uptime
+
+L’endpoint `GET /health/` est destiné à être interrogé régulièrement par un service de monitoring externe, comme Better Stack Uptime. Il vérifie que Django peut exécuter une requête simple (`SELECT 1`) sur la base de données :
+
 
 ---
 

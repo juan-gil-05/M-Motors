@@ -175,6 +175,8 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'Web app to buy or lease vehicles',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    # Pin the compatible ReDoc 2 bundle.
+    'REDOC_DIST': 'https://cdn.jsdelivr.net/npm/redoc@2.5.0',
 }
 
 # Json Wbe Token config
