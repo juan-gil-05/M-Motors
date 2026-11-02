@@ -1,17 +1,15 @@
 /* eslint-disable no-unused-vars */
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation, Link, data } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import api from '../api/api'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext';
 
-
 const LoginPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { login } = useAuth() // login function from authContext
-
 
     // Form input states
     const [formData, setFormData] = useState({
@@ -24,9 +22,55 @@ const LoginPage = () => {
     const [errorMessage, setErrorMessage] = useState('');
     const [errors, setErrors] = useState({})
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [failedAttempts, setFailedAttempts] = useState(0);
-    const [captchaValue, setCaptchaValue] = useState('');
+    const [captchaToken, setCaptchaToken] = useState('');
     const [captchaError, setCaptchaError] = useState('');
+    const [captchaRequired, setCaptchaRequired] = useState(false);
+    const captchaContainer = useRef(null);
+    const captchaWidgetId = useRef(null);
+    const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+
+    // Recaptcha loading manage
+    useEffect(() => {
+        if (!captchaRequired) {
+            // Google widgets are bound to their original DOM node. Clear the old id
+            // when the CAPTCHA section is removed so the next challenge can render anew.
+            if (captchaWidgetId.current !== null && window.grecaptcha?.reset) {
+                window.grecaptcha.reset(captchaWidgetId.current);
+            }
+            captchaWidgetId.current = null;
+            return;
+        }
+        if (!siteKey || !captchaContainer.current) return;
+
+        const renderCaptcha = () => {
+            // Avoid rendering twice while React or Google's script is still initializing.
+            if (!window.grecaptcha || !captchaContainer.current || captchaWidgetId.current !== null) return;
+            captchaWidgetId.current = window.grecaptcha.render(captchaContainer.current, {
+                sitekey: siteKey,
+                // Google calls these handlers when the user completes, expires, or cannot load the challenge.
+                callback: (token) => { setCaptchaToken(token); setCaptchaError(''); },
+                'expired-callback': () => setCaptchaToken(''),
+                'error-callback': () => setCaptchaError('Impossible de charger la vérification. Réessayez.'),
+            });
+        };
+
+        // Reuse Google's API if another page loaded it, otherwise load it on demand.
+        if (window.grecaptcha?.render) {
+            window.grecaptcha.ready(renderCaptcha);
+        } else {
+            const existingScript = document.querySelector('script[data-google-recaptcha]');
+            const script = existingScript || document.createElement('script');
+            if (!existingScript) {
+                script.src = 'https://www.google.com/recaptcha/api.js?render=explicit&hl=fr';
+                script.async = true;
+                script.defer = true;
+                script.dataset.googleRecaptcha = 'true';
+                document.head.appendChild(script);
+            }
+            script.addEventListener('load', () => window.grecaptcha.ready(renderCaptcha), { once: true });
+        }
+    }, [captchaRequired, siteKey]);
+
 
     /**
      * Handle universal input state updates
@@ -63,26 +107,25 @@ const LoginPage = () => {
 
         if (!validateForm()) return;
 
-        // Trigger CAPTCHA check if failed attempts is reached (5 attempts)
-        if (failedAttempts >= 5 && captchaValue.trim() !== 'MmOtORS7') {
-            setCaptchaError('Veuillez valider le CAPTCHA correctement.');
+        if (captchaRequired && !captchaToken) {
+            setCaptchaError('Veuillez cocher la case de vérification.');
             return;
         }
 
         setIsSubmitting(true);
 
         try {
-            const res = await api.post("/api/token/", {
+            const payload = {
                 username: formData.email,
                 password: formData.password,
-            })
+            };
+            // The backend verifies this token with Google before checking credentials.
+            if (captchaToken) payload.captcha_token = captchaToken;
+            const res = await api.post("/api/token/", payload)
 
             if (res.status === 200) {
                 const { access, refresh, is_staff } = res.data
                 login(access, refresh, is_staff) // send tokens to login function form AuthContext
-
-                // Reset failed attempts counter on success
-                setFailedAttempts(0);
 
                 // Redirect user to homepage
                 navigate(location.state?.from || '/');
@@ -90,12 +133,32 @@ const LoginPage = () => {
             }
 
         } catch (err) {
-            setFailedAttempts((prev) => prev + 1);
             // Generic error message
             const statusError = err.response?.status
             if (statusError === 401) {
+                // The backend returns these errors to synchronize the UI with its failure counter.
+                if (err.response.data?.captcha_required) setCaptchaRequired(true);
+                if (err.response.data?.captcha_passed) setCaptchaRequired(false);
+                setCaptchaToken('');
+                if (window.grecaptcha && captchaWidgetId.current !== null) {
+                    window.grecaptcha.reset(captchaWidgetId.current);
+                }
                 setErrorMessage("E-mail ou mot de passe incorrect.")
+            } else if (statusError === 428 && err.response.data?.captcha_required) {
+                // The server requires a CAPTCHA, for example if the browser UI was out of sync.
+                if (captchaWidgetId.current !== null) {
+                    window.grecaptcha?.reset(captchaWidgetId.current);
+                    captchaWidgetId.current = null;
+                }
+                setCaptchaRequired(true);
+            } else if (statusError === 400 && captchaRequired) {
+                setCaptchaToken('');
+                setCaptchaError('La vérification a échoué. Cochez à nouveau la case.');
+                if (window.grecaptcha && captchaWidgetId.current !== null) {
+                    window.grecaptcha.reset(captchaWidgetId.current);
+                }
             } else {
+                console.log(err.response)
                 setErrorMessage('Une erreur réseau est survenue. Veuillez réessayer.');
             }
         } finally {
@@ -183,19 +246,14 @@ const LoginPage = () => {
                                 </div>
                             </div>
 
-                            {/* CAPTCHA validation (Activated after 5 failed attempts) */}
-                            {failedAttempts >= 5 && (
-                                <div className="p-4 bg-slate-50 border border-slate-200 rounded-md space-y-2">
-                                    <label className="block text-xs font-semibold text-slate-700">
-                                        Vérification de sécurité (Saisissez : MmOtORS7)
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={captchaValue}
-                                        onChange={(e) => setCaptchaValue(e.target.value)}
-                                        placeholder="Recopiez le code"
-                                        className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-600"
-                                    />
+                            {/* Captcha section */}
+                            {captchaRequired && (
+                                <div className="space-y-2">
+                                    {siteKey ? (
+                                        <div ref={captchaContainer} />
+                                    ) : (
+                                        <p className="text-sm text-red-600">La vérification de sécurité n’est pas configurée.</p>
+                                    )}
                                     {captchaError && (
                                         <span className="text-xs text-red-500 block">{captchaError}</span>
                                     )}
@@ -205,7 +263,7 @@ const LoginPage = () => {
                             {/* Submit Button */}
                             <button
                                 type="submit"
-                                disabled={isSubmitting}
+                                // disabled={isSubmitting || (captchaRequired && !siteKey)}
                                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition-colors shadow-sm focus:outline-none disabled:opacity-50"
                             >
                                 {isSubmitting ? 'Connexion en cours...' : 'Se connecter'}

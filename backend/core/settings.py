@@ -19,6 +19,7 @@ if os.path.exists(os.path.join(BASE_DIR, ".env")):
     environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
 SECRET_KEY = env("SECRET_KEY")
+RECAPTCHA_SECRET_KEY = env("RECAPTCHA_SECRET_KEY", default="")
 
 DEBUG = env("DEBUG")
 
@@ -69,6 +70,7 @@ CORS_ALLOWED_ORIGINS = [
     # In Production
     "https://m-motors-frontend-ohqq.onrender.com"
 ]
+CORS_ALLOW_CREDENTIALS = True
 
 # Configure CORS allowed headers for "Sentry" monitoring
 CORS_ALLOW_HEADERS = (

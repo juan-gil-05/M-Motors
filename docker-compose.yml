@@ -61,6 +61,8 @@ services:
     build:
       context: ./frontend
       target: production
+      args:
+        VITE_RECAPTCHA_SITE_KEY: ${VITE_RECAPTCHA_SITE_KEY}
     container_name: m-motors_frontend_prod
     ports:
       - "80:80"

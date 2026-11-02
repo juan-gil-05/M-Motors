@@ -4,6 +4,13 @@ from .serializers import UserSerializer
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.exceptions import APIException
+from django.conf import settings
+from django.core import signing
+from django.utils.crypto import salted_hmac
+import requests
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -45,3 +52,118 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
+    # Require one CAPTCHA for each group of five failed login attempts.
+    captcha_attempts = 5
+    # The signed cookie carries short-lived state.
+    state_cookie = "login_captcha_state"
+    state_salt = "user_api.login_captcha_state"
+    state_max_age = 30 * 60 # cookie live time : 30 minutes
+ 
+    def _identifier_hash(self, identifier):
+        # Bind the counter to the submitted username without storing it in the cookie as plain text.
+        return salted_hmac(
+            "user_api.login_identifier", identifier, secret=settings.SECRET_KEY
+        ).hexdigest()
+
+    def _read_state(self, request, identifier_hash):
+        try:
+            # Django verifies the signature and expiration before trusting cookie contents.
+            state = signing.loads(
+                request.COOKIES.get(self.state_cookie, ""),
+                salt=self.state_salt,
+                max_age=self.state_max_age,
+            )
+            if state.get("identifier") == identifier_hash:
+                return state
+        except (signing.BadSignature, AttributeError, TypeError):
+            pass
+        # Missing, expired, invalid, or different-user cookies start a fresh counter.
+        return {"identifier": identifier_hash, "failures": 0, "captcha_passed": False}
+
+    def _save_state(self, request, response, state):
+        host = request.get_host().split(":", 1)[0].lower()
+        secure_cookie = host not in {"localhost", "127.0.0.1"}
+        # HttpOnly prevents frontend JavaScript from reading the counter; HTTPS uses Secure cookies.
+        response.set_cookie(
+            self.state_cookie,
+            signing.dumps(state, salt=self.state_salt),
+            max_age=self.state_max_age,
+            httponly=True,
+            secure=secure_cookie,
+            samesite="None" if secure_cookie else "Lax",
+            path="/api/token/",
+        )
+        return response
+
+    def post(self, request, *args, **kwargs):
+        identifier = str(request.data.get("username", "")).strip().casefold()
+        identifier_hash = self._identifier_hash(identifier)
+        state = self._read_state(request, identifier_hash)
+        if state.get("captcha_passed"):
+            state["failures"] = 0
+            state["captcha_passed"] = False
+        # Ask for CAPTCHA only after the backend has recorded the configured number of failures.
+        captcha_required = state["failures"] >= self.captcha_attempts
+        token = request.data.get("captcha_token")
+
+        if captcha_required and not state["captcha_passed"]:
+            if not token:
+                # HTTP 428 tells the frontend to show the CAPTCHA and retry with its token.
+                return Response(
+                    {"captcha_required": True},
+                    status=status.HTTP_428_PRECONDITION_REQUIRED,
+                )
+
+            secret = getattr(settings, "RECAPTCHA_SECRET_KEY", "")
+            if not secret:
+                # Fail closed: a required CAPTCHA cannot be accepted without the server secret.
+                return Response(
+                    {"detail": "La vérification de sécurité est indisponible."},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
+            try:
+                # Only the backend sends the secret to Google's verification endpoint.
+                verification = requests.post(
+                    "https://www.google.com/recaptcha/api/siteverify",
+                    data={"secret": secret, "response": token},
+                    timeout=5,
+                )
+                verification.raise_for_status()
+                result = verification.json()
+                valid = isinstance(result, dict) and result.get("success", False)
+            except (requests.RequestException, ValueError):
+                valid = False
+
+            if not valid:
+                # A missing, expired, or rejected token must not reach password authentication.
+                return Response(
+                    {"detail": "La vérification de sécurité a échoué. Veuillez réessayer."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            state["captcha_passed"] = True
+            # The CAPTCHA allows one login attempt, then a new five-failure cycle begins.
+            state["failures"] = 0
+
+        try:
+            response = super().post(request, *args, **kwargs)
+        except APIException as exc:
+            # SimpleJWT raises AuthenticationFailed for bad credentials; turn it
+            # into a response here so the failure counter can be signed and saved.
+            response = self.handle_exception(exc)
+        if response.status_code == status.HTTP_401_UNAUTHORIZED:
+            # Count each bad password, including the attempt immediately after a valid CAPTCHA.
+            state["failures"] += 1
+            captcha_was_passed = state["captcha_passed"]
+            if captcha_was_passed:
+                response.data["captcha_passed"] = True
+            state["captcha_passed"] = False
+            response.data["captcha_required"] = state["failures"] >= self.captcha_attempts
+            return self._save_state(request, response, state)
+
+    
+        
+        if response.status_code == status.HTTP_200_OK:
+            # Successful authentication no longer needs the temporary failure counter.
+            response.delete_cookie(self.state_cookie, path="/api/token/")
+
+        return response

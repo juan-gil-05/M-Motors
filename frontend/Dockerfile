@@ -10,6 +10,8 @@ CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 # 2 : Build the React app for production
 FROM node:20-alpine AS build
 WORKDIR /app
+ARG VITE_RECAPTCHA_SITE_KEY
+ENV VITE_RECAPTCHA_SITE_KEY=$VITE_RECAPTCHA_SITE_KEY
 COPY package*.json ./
 RUN npm ci
 COPY . .
