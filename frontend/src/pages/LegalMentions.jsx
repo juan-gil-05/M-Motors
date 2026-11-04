@@ -1,4 +1,3 @@
-import React from 'react';
 import { Copyright } from 'lucide-react'
 
 export default function LegalMentions() {
