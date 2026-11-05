@@ -1,6 +1,5 @@
-/* eslint-disable no-unused-vars */
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useLocation, Link, data } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import api from '../api/api'
 import toast from 'react-hot-toast'
@@ -97,6 +96,43 @@ const LoginPage = () => {
         return Object.keys(newErrors).length === 0;
     };
 
+    const resetCaptcha = () => {
+        setCaptchaToken('');
+        if (window.grecaptcha && captchaWidgetId.current !== null) {
+            window.grecaptcha.reset(captchaWidgetId.current);
+        }
+    };
+
+    const handleLoginError = (err) => {
+        const statusError = err.response?.status;
+
+        if (statusError === 401) {
+            if (err.response.data?.captcha_required) setCaptchaRequired(true);
+            if (err.response.data?.captcha_passed) setCaptchaRequired(false);
+            resetCaptcha();
+            setErrorMessage("E-mail ou mot de passe incorrect.");
+            return;
+        }
+
+        if (statusError === 428 && err.response.data?.captcha_required) {
+            if (captchaWidgetId.current !== null) {
+                window.grecaptcha?.reset(captchaWidgetId.current);
+                captchaWidgetId.current = null;
+            }
+            setCaptchaRequired(true);
+            return;
+        }
+
+        if (statusError === 400 && captchaRequired) {
+            resetCaptcha();
+            setCaptchaError('La vérification a échoué. Cochez à nouveau la case.');
+            return;
+        }
+
+        console.log(err.response);
+        setErrorMessage('Une erreur réseau est survenue. Veuillez réessayer.');
+    };
+
     /**
      * Handle login form submission
      */
@@ -128,39 +164,12 @@ const LoginPage = () => {
                 login(access, refresh, is_staff) // send tokens to login function form AuthContext
 
                 // Redirect user to homepage
-                navigate(location.state?.from || '/');
+                void navigate(location.state?.from || '/');
                 toast.success('Connexion reussi!')
             }
 
         } catch (err) {
-            // Generic error message
-            const statusError = err.response?.status
-            if (statusError === 401) {
-                // The backend returns these errors to synchronize the UI with its failure counter.
-                if (err.response.data?.captcha_required) setCaptchaRequired(true);
-                if (err.response.data?.captcha_passed) setCaptchaRequired(false);
-                setCaptchaToken('');
-                if (window.grecaptcha && captchaWidgetId.current !== null) {
-                    window.grecaptcha.reset(captchaWidgetId.current);
-                }
-                setErrorMessage("E-mail ou mot de passe incorrect.")
-            } else if (statusError === 428 && err.response.data?.captcha_required) {
-                // The server requires a CAPTCHA, for example if the browser UI was out of sync.
-                if (captchaWidgetId.current !== null) {
-                    window.grecaptcha?.reset(captchaWidgetId.current);
-                    captchaWidgetId.current = null;
-                }
-                setCaptchaRequired(true);
-            } else if (statusError === 400 && captchaRequired) {
-                setCaptchaToken('');
-                setCaptchaError('La vérification a échoué. Cochez à nouveau la case.');
-                if (window.grecaptcha && captchaWidgetId.current !== null) {
-                    window.grecaptcha.reset(captchaWidgetId.current);
-                }
-            } else {
-                console.log(err.response)
-                setErrorMessage('Une erreur réseau est survenue. Veuillez réessayer.');
-            }
+            handleLoginError(err);
         } finally {
             setIsSubmitting(false);
         }
@@ -200,7 +209,7 @@ const LoginPage = () => {
 
                             {/* Email Input */}
                             <div className="space-y-1.5">
-                                <label className="block text-xs font-semibold text-slate-700 tracking-wider uppercase">
+                                <label className="block text-xs font-semibold text-slate-700 tracking-wider uppercase" htmlFor='e-mail'>
                                     E-MAIL
                                 </label>
                                 <input
@@ -219,7 +228,7 @@ const LoginPage = () => {
 
                             {/* Password Input with Visibility Toggle */}
                             <div className="space-y-1.5">
-                                <label className="block text-xs font-semibold text-slate-700 tracking-wider uppercase">
+                                <label className="block text-xs font-semibold text-slate-700 tracking-wider uppercase" htmlFor='mot-de-passe'>
                                     MOT DE PASSE
                                 </label>
                                 <div className="relative">

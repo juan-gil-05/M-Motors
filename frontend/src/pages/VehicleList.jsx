@@ -172,7 +172,7 @@ export default function VehicleListPage() {
     }
   }, [appliedFilters, options.contracts, optionsLoaded, ordering, page]);
 
-  useEffect(() => { fetchVehicles(); }, [fetchVehicles]);
+  useEffect(() => { void fetchVehicles(); }, [fetchVehicles]);
 
   // Paginatio data
   const totalPages = Math.max(1, Math.ceil(count / PAGE_SIZE));
@@ -192,6 +192,43 @@ export default function VehicleListPage() {
     setOrdering('-price');
     setSearchParams({});
   };
+
+  let vehicleResults;
+  if (error) {
+    vehicleResults = <div className="rounded-xl bg-white p-10 text-center text-slate-600">Impossible de charger les véhicules. Vérifiez votre connexion puis réessayez.</div>;
+  } else if (loading) {
+    vehicleResults = <output className="block rounded-xl bg-white p-10 text-center text-slate-600">Chargement des véhicules…</output>;
+  } else if (vehicles.length === 0) {
+    vehicleResults = (
+      <div className="rounded-xl bg-white px-6 py-14 text-center shadow-sm">
+        <h3 className="text-lg font-bold text-slate-800">Aucun véhicule ne correspond à vos critères.</h3>
+        <p className="mt-2 text-sm text-slate-500">Modifiez ou réinitialisez les filtres pour voir d’autres véhicules disponibles.</p>
+        <button type="button" onClick={resetFilters} className="mt-5 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800"><RotateCcw size={15} />Réinitialiser les filtres</button>
+      </div>
+    );
+  } else {
+    vehicleResults = (
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+        {vehicles.map((vehicle) => {
+          const photo = vehicle.images?.find((image) => image.is_main)?.image_url || vehicle.images?.[0]?.image_url || CarDefaultImg;
+          const isLease = vehicle.contract_type?.name?.toLowerCase() === 'location';
+          return (
+            <article key={vehicle.id} className="overflow-hidden rounded-xl bg-white shadow-sm transition-shadow hover:shadow-md">
+              <img src={photo} alt={`${vehicle.model?.maker?.name} ${vehicle.model?.name}`} className="aspect-5/1 w-full object-cover sm:aspect-[1.56/1]" />
+              <div className="p-4 sm:p-5">
+                <div className="flex items-start justify-between gap-2">
+                  <div><p className="text-xs font-medium text-slate-500">{vehicle.model?.maker?.name}</p><h3 className="font-bold leading-tight text-slate-900">{vehicle.model?.name}</h3></div>
+                  <p className="shrink-0 font-extrabold text-blue-600">{formatPrice(vehicle.price)} €{isLease && <span className="text-xs font-normal"> / mois</span>}</p>
+                </div>
+                <p className="text-sm text-slate-500">{vehicle.model?.year} • {Number(vehicle.kilometres).toLocaleString('fr-FR')} Kilomètres</p>
+                <button type="button" onClick={() => navigate(`/vehicule/${vehicle.id}`)} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-slate-100 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200">Voir le détail <ArrowRight size={16} /></button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#f7f9fc] pb-16 text-slate-800">
@@ -216,7 +253,8 @@ export default function VehicleListPage() {
 
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3 sm:mb-7">
           <h2 className="text-base font-bold text-slate-700 sm:text-lg">{count} véhicules disponibles</h2>
-          <label className="flex items-center gap-2 text-xs text-slate-600 sm:text-sm">Trier par :
+          <label className="flex items-center gap-2 text-xs text-slate-600 sm:text-sm">
+            <span>Trier par :</span>
             <select value={ordering} onChange={(event) => { setOrdering(event.target.value); setPage(1); }} className="cursor-pointer bg-transparent font-semibold text-slate-700 focus:outline-none">
               <option value="-price">Prix (Décroissant)</option>
               <option value="price">Prix (Croissant)</option>
@@ -224,33 +262,7 @@ export default function VehicleListPage() {
           </label>
         </div>
 
-        {error ? <div className="rounded-xl bg-white p-10 text-center text-slate-600">Impossible de charger les véhicules. Vérifiez votre connexion puis réessayez.</div> : loading ? <div className="rounded-xl bg-white p-10 text-center text-slate-600" role="status">Chargement des véhicules…</div> : vehicles.length === 0 ? (
-          <div className="rounded-xl bg-white px-6 py-14 text-center shadow-sm">
-            <h3 className="text-lg font-bold text-slate-800">Aucun véhicule ne correspond à vos critères.</h3>
-            <p className="mt-2 text-sm text-slate-500">Modifiez ou réinitialisez les filtres pour voir d’autres véhicules disponibles.</p>
-            <button type="button" onClick={resetFilters} className="mt-5 inline-flex items-center gap-2 rounded-lg bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800"><RotateCcw size={15} />Réinitialiser les filtres</button>
-          </div>
-        ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
-            {vehicles.map((vehicle) => {
-              const photo = vehicle.images?.find((image) => image.is_main)?.image_url || vehicle.images?.[0]?.image_url || CarDefaultImg;
-              const isLease = vehicle.contract_type?.name?.toLowerCase() === 'location';
-              return (
-                <article key={vehicle.id} className="overflow-hidden rounded-xl bg-white shadow-sm transition-shadow hover:shadow-md">
-                  <img src={photo} alt={`${vehicle.model?.maker?.name} ${vehicle.model?.name}`} className="aspect-5/1 w-full object-cover sm:aspect-[1.56/1]" />
-                  <div className="p-4 sm:p-5">
-                    <div className="flex items-start justify-between gap-2">
-                      <div><p className="text-xs font-medium text-slate-500">{vehicle.model?.maker?.name}</p><h3 className="font-bold leading-tight text-slate-900">{vehicle.model?.name}</h3></div>
-                      <p className="shrink-0 font-extrabold text-blue-600">{formatPrice(vehicle.price)} €{isLease && <span className="text-xs font-normal"> / mois</span>}</p>
-                    </div>
-                    <p className="text-sm text-slate-500">{vehicle.model?.year} • {Number(vehicle.kilometres).toLocaleString('fr-FR')} Kilomètres</p>
-                    <button type="button" onClick={() => navigate(`/vehicule/${vehicle.id}`)} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-slate-100 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200">Voir le détail <ArrowRight size={16} /></button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
+        {vehicleResults}
 
         {!loading && !error && totalPages > 1 && <nav aria-label="Pagination des véhicules" className="mt-12 flex items-center justify-center gap-2">
           <button type="button" disabled={page === 1} onClick={() => setPage((current) => current - 1)} aria-label="Page précédente" className="rounded-full border border-slate-200 p-2 text-slate-600 disabled:opacity-40"><ArrowLeft size={17} />

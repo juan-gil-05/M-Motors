@@ -77,9 +77,9 @@ class ApplicationSerializer(serializers.ModelSerializer):
                 if not attrs.get(field)
             ]
             if missing_documents:
-                raise serializers.ValidationError({
-                    field: 'Ce document est obligatoire.' for field in missing_documents
-                })
+                raise serializers.ValidationError(
+                    dict.fromkeys(missing_documents, 'Ce document est obligatoire.')
+                )
             if not attrs.get('data_processing_consent'):
                 raise serializers.ValidationError({
                     'data_processing_consent': 'Votre consentement au traitement des données est obligatoire.'

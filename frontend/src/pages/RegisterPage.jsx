@@ -104,7 +104,7 @@ const RegisterPage = () => {
                 setSuccessMessage('Inscription réussie ! Redirection vers la page de connexion...');
                 // Redirect to login page after 2 seconds
                 setTimeout(() => {
-                    navigate('/connexion');
+                    void navigate('/connexion');
                 }, 2000);
             }
         } catch (err) {
@@ -169,7 +169,7 @@ const RegisterPage = () => {
                             {/* First Name & Last Name Grid */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-700 tracking-wider uppercase mb-1">
+                                    <label className="block text-xs font-semibold text-slate-700 tracking-wider uppercase mb-1" htmlFor='prenom'>
                                         PRÉNOM
                                     </label>
                                     <input
@@ -186,7 +186,7 @@ const RegisterPage = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-700 tracking-wider uppercase mb-1">
+                                    <label className="block text-xs font-semibold text-slate-700 tracking-wider uppercase mb-1" htmlFor='nom'>
                                         NOM
                                     </label>
                                     <input
@@ -205,7 +205,7 @@ const RegisterPage = () => {
 
                             {/* Email Input with Success Icon */}
                             <div>
-                                <label className="block text-xs font-semibold text-slate-700 tracking-wider uppercase mb-1">
+                                <label className="block text-xs font-semibold text-slate-700 tracking-wider uppercase mb-1" htmlFor='e-mail'>
                                     E-MAIL
                                 </label>
                                 <div className="relative">
@@ -228,7 +228,7 @@ const RegisterPage = () => {
 
                             {/* Password Input with Icon */}
                             <div>
-                                <label className="block text-xs font-semibold text-slate-700 tracking-wider uppercase mb-1">
+                                <label className="block text-xs font-semibold text-slate-700 tracking-wider uppercase mb-1" htmlFor='mot-de-passe'>
                                     MOT DE PASSE
                                 </label>
                                 <div className="relative">
@@ -256,7 +256,7 @@ const RegisterPage = () => {
 
                             {/* Confirm Password Input */}
                             <div>
-                                <label className="block text-xs font-semibold text-slate-700 tracking-wider uppercase mb-1">
+                                <label className="block text-xs font-semibold text-slate-700 tracking-wider uppercase mb-1" htmlFor='confirmation-mot-de-passe'>
                                     CONFIRMATION DU MOT DE PASSE
                                 </label>
                                 <input

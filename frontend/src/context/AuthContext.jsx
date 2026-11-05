@@ -1,8 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { ACCESS_TOKEN, REFRESH_TOKEN, IS_ADMIN } from "../constants"
-
 
 // 1. Create Context
 const AuthContext = createContext(null);
@@ -39,7 +38,7 @@ export const AuthProvider = ({ children }) => {
     /**
      * Handle login: store token and update state
      */
-    const login = (accessToken, refreshToken, admin) => {
+    const login = useCallback((accessToken, refreshToken, admin) => {
         localStorage.setItem(ACCESS_TOKEN, accessToken);
         if (refreshToken) {
             localStorage.setItem(REFRESH_TOKEN, refreshToken);
@@ -49,36 +48,37 @@ export const AuthProvider = ({ children }) => {
         }
         setToken(accessToken);
         setAdmin(admin);
-    };
+    }, []);
 
     /**
      * Handle logout: clear local storage and reset state
      */
-    const logout = () => {
+    const logout = useCallback(() => {
         localStorage.removeItem(ACCESS_TOKEN);
         localStorage.removeItem(REFRESH_TOKEN);
         localStorage.removeItem(IS_ADMIN);
         setToken(null);
         setUser(null);
         setAdmin(null);
-    };
+    }, []);
 
     // Check if user is authenticated (if token exists the user is authenticated)
     const isAuthenticated = !!token;
-    const isAdmin = !!admin
+    const isAdmin = !!admin;
+
+    // Stabilisation of the objet from context with useMemo
+    const value = useMemo(() => ({
+        token,
+        user,
+        isAuthenticated,
+        isAdmin,
+        loading,
+        login,
+        logout,
+    }), [token, user, isAuthenticated, isAdmin, loading, login, logout]);
 
     return (
-        <AuthContext.Provider
-            value={{
-                token,
-                user,
-                isAuthenticated,
-                isAdmin,
-                loading,
-                login,
-                logout,
-            }}
-        >
+        <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );

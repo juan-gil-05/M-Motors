@@ -16,7 +16,7 @@ class Status(models.Model):
 
 
 class Application(models.Model):
-    reject_justification = models.TextField(null=True, blank=True)
+    reject_justification = models.TextField(blank=True)
     data_processing_consent = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

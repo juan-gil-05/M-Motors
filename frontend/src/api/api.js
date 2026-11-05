@@ -45,7 +45,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => { throw error; }
 );
 
 // If the access token is expired, call the refresh token function and retry the request with the new acces token 
@@ -71,11 +71,11 @@ api.interceptors.response.use(
         localStorage.removeItem(ACCESS_TOKEN);
         localStorage.removeItem(REFRESH_TOKEN);
         window.location.href = "/connexion";
-        return Promise.reject(refreshError);
+        throw refreshError;
       }
     }
 
-    return Promise.reject(error);
+    throw error;
   }
 );
 

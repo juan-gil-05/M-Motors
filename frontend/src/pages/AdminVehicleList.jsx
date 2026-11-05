@@ -67,7 +67,7 @@ const AdminVehicleList = () => {
   }, [currentPage, searchQuery, selectedType, selectedStatus, ordering]);
 
   useEffect(() => {
-    fetchVehicles();
+    void fetchVehicles();
   }, [fetchVehicles]);
 
   /**
@@ -95,11 +95,11 @@ const AdminVehicleList = () => {
       await api.delete(`/vehicle_api/vehicles/${vehicleToDelete.id}/`, requestConfig);
       setVehicleToDelete(null);
       setLinkedApplicationsWarning('');
-      fetchVehicles();
+      void fetchVehicles();
       // Display success message
       toast.success('Le véhicule a été supprimé avec succès.')
     } catch (error) {
-      if (error.response && error.response.status === 409) {
+      if (error.response?.status === 409) {
         setLinkedApplicationsWarning(
           error.response.data?.message ||
           'Ce véhicule est lié à des dossiers. Sa suppression supprimera également les dossiers associés.'
@@ -128,7 +128,7 @@ const AdminVehicleList = () => {
         return (
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 uppercase tracking-wide">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            Disponible
+            <span>Disponible</span>
           </span>
         );
       case 'louee':
@@ -136,7 +136,7 @@ const AdminVehicleList = () => {
         return (
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 uppercase tracking-wide">
             <span className="w-2 h-2 rounded-full bg-slate-800"></span>
-            Louée
+            <span>Louée</span>
           </span>
         );
       case 'vendue':
@@ -144,7 +144,7 @@ const AdminVehicleList = () => {
         return (
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 uppercase tracking-wide">
             <span className="w-2 h-2 rounded-full bg-slate-800"></span>
-            Vendue
+            <span>Vendue</span>
           </span>
         );
       default:
@@ -152,6 +152,13 @@ const AdminVehicleList = () => {
     }
   };
 
+  let deleteButtonLabel = 'Supprimer';
+  if (linkedApplicationsWarning) {
+    deleteButtonLabel = 'Supprimer le véhicule et les dossiers';
+  }
+  if (isDeleting) {
+    deleteButtonLabel = 'Suppression...';
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8 font-sans">
@@ -296,19 +303,21 @@ const AdminVehicleList = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
-                {loading ? (
+                {loading && (
                   <tr>
                     <td colSpan="6" className="py-8 text-center text-slate-500">
                       Chargement des véhicules...
                     </td>
                   </tr>
-                ) : vehicles.length === 0 ? (
+                )}
+                {!loading && vehicles.length === 0 && (
                   <tr>
                     <td colSpan="6" className="py-8 text-center text-slate-500">
                       Aucun véhicule ne correspond aux critères de recherche.
                     </td>
                   </tr>
-                ) : (
+                )}
+                {!loading && vehicles.length > 0 &&
                   vehicles.map((vehicle) => {
                     const coverPhoto =
                       vehicle.images?.find((p) => p.is_main)?.image_url ||
@@ -319,9 +328,10 @@ const AdminVehicleList = () => {
                       <tr key={vehicle.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-4 px-6 font-medium text-slate-500">{vehicle.id}</td>
                         <td className="py-4 px-6">
-                          <div
+                          <button
+                            type="button"
                             onClick={() => navigate(`/vehicule/${vehicle.id}`)}
-                            className="flex items-center gap-4 cursor-pointer group"
+                            className="flex items-center gap-4 cursor-pointer group text-left"
                           >
                             <img
                               src={coverPhoto}
@@ -331,7 +341,7 @@ const AdminVehicleList = () => {
                             <span className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                               Marque: {vehicle.model.maker.name} - modèle: {vehicle.model.name}
                             </span>
-                          </div>
+                          </button>
                         </td>
                         <td className="py-4 px-6 capitalize text-slate-700 font-medium">
                           {vehicle.contract_type.name === 'Vente' ? 'Vente' : 'Location'}
@@ -371,8 +381,7 @@ const AdminVehicleList = () => {
                         </td>
                       </tr>
                     );
-                  })
-                )}
+                  })}
               </tbody>
             </table>
           </div>
@@ -460,7 +469,7 @@ const AdminVehicleList = () => {
                 disabled={isDeleting}
                 className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
               >
-                {isDeleting ? 'Suppression...' : linkedApplicationsWarning ? 'Supprimer le véhicule et les dossiers' : 'Supprimer'}
+                {deleteButtonLabel}
               </button>
             </div>
           </div>

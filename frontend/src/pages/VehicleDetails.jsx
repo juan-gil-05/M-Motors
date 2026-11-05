@@ -116,9 +116,9 @@ export default function VehicleDetails() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-7xl px-6 py-24 text-center text-slate-600" role="status">
+      <output className="mx-auto max-w-7xl px-6 py-24 text-center text-slate-600">
         Chargement du véhicule…
-      </div>
+      </output>
     );
   }
 
@@ -146,7 +146,7 @@ export default function VehicleDetails() {
   const openApplicationForm = () => {
     if (!isAuthenticated) {
       toast('Connectez-vous pour déposer votre dossier.');
-      navigate('/connexion', { state: { from: `/vehicule/${id}` } });
+      void navigate('/connexion', { state: { from: `/vehicule/${id}` } });
       return;
     }
     setApplicationError('');
@@ -243,7 +243,7 @@ export default function VehicleDetails() {
                     shownImage === image ? 'border-blue-600 ring-2 ring-blue-600/20' : 'border-transparent opacity-90 hover:opacity-100'
                   }`}
                 >
-                  <img src={image} alt={`${title}, photo ${index + 1}`} className="h-full w-full object-cover" />
+                  <img src={image} alt={`${title}, ${index + 1}`} className="h-full w-full object-cover" />
                   
                   {/* Open the full photo gallery from the remaining photos counter. */}
                   {index === 3 && gallery.length > 4 && (
@@ -347,14 +347,9 @@ export default function VehicleDetails() {
         {/* Image Gallery */}
         {galleryOpen && gallery.length > 4 && (
           <div
-            className="fixed inset-0 z-100 flex items-center justify-center bg-black/90 p-4 sm:p-8"
-            role="dialog"
-            aria-modal="true"
+            open
+            className="fixed inset-0 z-100 m-0 flex items-center justify-center border-0 bg-black/90 p-4 sm:p-8"
             aria-label={`Galerie photos ${title}`}
-            onClick={() => {
-              setSelectedImage(gallery[activePhotoIndex]);
-              setGalleryOpen(false);
-            }}
           >
             <button
               type="button"
@@ -379,8 +374,8 @@ export default function VehicleDetails() {
             >
               <ChevronLeft size={30} />
             </button>
-            <figure className="flex max-h-full max-w-6xl flex-col items-center" onClick={(event) => event.stopPropagation()}>
-              <img src={gallery[activePhotoIndex]} alt={`${title}, photo ${activePhotoIndex + 1}`} className="max-h-[75vh] max-w-full rounded-lg object-contain" />
+            <figure className="flex max-h-full max-w-6xl flex-col items-center">
+              <img src={gallery[activePhotoIndex]} alt={`${title}, ${activePhotoIndex + 1}`} className="max-h-[75vh] max-w-full rounded-lg object-contain" />
               <figcaption className="mt-4 text-sm font-medium text-white">Photo {activePhotoIndex + 1} / {gallery.length}</figcaption>
               <div className="mt-4 flex max-w-full gap-2 overflow-x-auto pb-1">
                 {gallery.map((image, index) => (
@@ -475,16 +470,18 @@ export default function VehicleDetails() {
         {applicationOpen && (
           <div
             className="fixed inset-0 z-100 flex items-center justify-center overflow-y-auto bg-slate-950/60 p-4 backdrop-blur-sm sm:p-8"
-            role="presentation"
-            onClick={closeApplicationForm}
           >
-            <section
-              role="dialog"
-              aria-modal="true"
+            <button
+              type="button"
+              aria-label="Fermer le formulaire"
+              className="absolute inset-0 cursor-default"
+              onClick={closeApplicationForm}
+            />
+            <dialog
+              open
               aria-labelledby="application-dialog-title"
               aria-describedby="application-dialog-description"
-              className="relative my-auto w-full max-w-4xl rounded-2xl bg-white p-6 shadow-2xl sm:p-10"
-              onClick={(event) => event.stopPropagation()}
+              className="relative z-10 my-auto w-full max-w-4xl rounded-2xl bg-white p-6 shadow-2xl sm:p-10"
             >
               <button
                 type="button"
@@ -552,15 +549,13 @@ export default function VehicleDetails() {
                   </button>
                 </div>
               </form>
-            </section>
+            </dialog>
           </div>
         )}
 
         {confirmSubmitOpen && applicationOpen && (
           <div
             className="fixed inset-0 z-110 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm sm:p-6"
-            role="presentation"
-            onClick={() => !submittingApplication && setConfirmSubmitOpen(false)}
           >
             <section
               role="alertdialog"
@@ -568,7 +563,6 @@ export default function VehicleDetails() {
               aria-labelledby="confirm-application-title"
               aria-describedby="confirm-application-description"
               className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl sm:p-8"
-              onClick={(event) => event.stopPropagation()}
             >
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-blue-700">
                 <ShieldCheck size={28} />

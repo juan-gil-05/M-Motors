@@ -36,7 +36,7 @@ class UserSerializer(serializers.ModelSerializer):
         if not re.search(r'[A-Z]', value):
             raise serializers.ValidationError("Le mot de passe doit contenir au moins une lettre majuscule.")
             
-        if not re.search(r'[0-9]', value):
+        if not re.search(r'\d', value):
             raise serializers.ValidationError("Le mot de passe doit contenir au moins un chiffre.")
             
         if not re.search(r'[!@#$%^&*(),.?":{}|<>_+\-=\[\]\\/`~]', value):

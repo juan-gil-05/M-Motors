@@ -4,11 +4,18 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
-from .models import *
-from .serializers import *
 from application_api.models import Application 
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.pagination import PageNumberPagination
+from .models import ContractType, Fuel, Gearbox, Maker, Model, Vehicle
+from .serializers import (
+    ContractTypeSerializer,
+    FuelSerializer,
+    GearboxSerializer,
+    MakerSerializer,
+    ModelSerializer,
+    VehicleSerializer,
+)
 
 
 class VehicleViewSet(viewsets.ModelViewSet):

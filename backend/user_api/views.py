@@ -95,6 +95,57 @@ class MyTokenObtainPairView(TokenObtainPairView):
         )
         return response
 
+    def _validate_captcha(self, token):
+        """Verify a CAPTCHA token with Google before allowing a login attempt."""
+        if not token:
+            return Response(
+                {"captcha_required": True},
+                status=status.HTTP_428_PRECONDITION_REQUIRED,
+            )
+
+        secret = getattr(settings, "RECAPTCHA_SECRET_KEY", "")
+        if not secret:
+            return Response(
+                {"detail": "La vérification de sécurité est indisponible."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        try:
+            verification = requests.post(
+                "https://www.google.com/recaptcha/api/siteverify",
+                data={"secret": secret, "response": token},
+                timeout=5,
+            )
+            verification.raise_for_status()
+            result = verification.json()
+            valid = isinstance(result, dict) and result.get("success", False)
+        except (requests.RequestException, ValueError):
+            valid = False
+
+        if not valid:
+            return Response(
+                {"detail": "La vérification de sécurité a échoué. Veuillez réessayer."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return None
+
+    def _authenticate(self, request, *args, **kwargs):
+        try:
+            return super().post(request, *args, **kwargs)
+        except APIException as exc:
+            # SimpleJWT raises AuthenticationFailed for bad credentials; turn it
+            # into a response here so the failure counter can be signed and saved.
+            return self.handle_exception(exc)
+
+    def _handle_failed_login(self, response, state, request):
+        state["failures"] += 1
+        captcha_was_passed = state["captcha_passed"]
+        if captcha_was_passed:
+            response.data["captcha_passed"] = True
+        state["captcha_passed"] = False
+        # Persist the updated counter so the next request can decide when to require CAPTCHA.
+        response.data["captcha_required"] = state["failures"] >= self.captcha_attempts
+        return self._save_state(request, response, state)
+
     def post(self, request, *args, **kwargs):
         identifier = str(request.data.get("username", "")).strip().casefold()
         identifier_hash = self._identifier_hash(identifier)
@@ -107,61 +158,18 @@ class MyTokenObtainPairView(TokenObtainPairView):
         token = request.data.get("captcha_token")
 
         if captcha_required and not state["captcha_passed"]:
-            if not token:
-                # HTTP 428 tells the frontend to show the CAPTCHA and retry with its token.
-                return Response(
-                    {"captcha_required": True},
-                    status=status.HTTP_428_PRECONDITION_REQUIRED,
-                )
-
-            secret = getattr(settings, "RECAPTCHA_SECRET_KEY", "")
-            if not secret:
-                # Fail closed: a required CAPTCHA cannot be accepted without the server secret.
-                return Response(
-                    {"detail": "La vérification de sécurité est indisponible."},
-                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
-                )
-            try:
-                # Only the backend sends the secret to Google's verification endpoint.
-                verification = requests.post(
-                    "https://www.google.com/recaptcha/api/siteverify",
-                    data={"secret": secret, "response": token},
-                    timeout=5,
-                )
-                verification.raise_for_status()
-                result = verification.json()
-                valid = isinstance(result, dict) and result.get("success", False)
-            except (requests.RequestException, ValueError):
-                valid = False
-
-            if not valid:
-                # A missing, expired, or rejected token must not reach password authentication.
-                return Response(
-                    {"detail": "La vérification de sécurité a échoué. Veuillez réessayer."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+            captcha_error = self._validate_captcha(token)
+            if captcha_error:
+                return captcha_error
             state["captcha_passed"] = True
             # The CAPTCHA allows one login attempt, then a new five-failure cycle begins.
             state["failures"] = 0
 
-        try:
-            response = super().post(request, *args, **kwargs)
-        except APIException as exc:
-            # SimpleJWT raises AuthenticationFailed for bad credentials; turn it
-            # into a response here so the failure counter can be signed and saved.
-            response = self.handle_exception(exc)
+        response = self._authenticate(request, *args, **kwargs)
         if response.status_code == status.HTTP_401_UNAUTHORIZED:
             # Count each bad password, including the attempt immediately after a valid CAPTCHA.
-            state["failures"] += 1
-            captcha_was_passed = state["captcha_passed"]
-            if captcha_was_passed:
-                response.data["captcha_passed"] = True
-            state["captcha_passed"] = False
-            response.data["captcha_required"] = state["failures"] >= self.captcha_attempts
-            return self._save_state(request, response, state)
+            return self._handle_failed_login(response, state, request)
 
-    
-        
         if response.status_code == status.HTTP_200_OK:
             # Successful authentication no longer needs the temporary failure counter.
             response.delete_cookie(self.state_cookie, path="/api/token/")

@@ -44,6 +44,13 @@ const getContractLabel = (contractType) => {
 const getStatusLabel = (status) =>
   status?.name?.toLowerCase() === 'déposé' ? 'En attente' : status?.name || 'Inconnu';
 
+const getStatusClass = (status) => {
+  const name = status?.name?.toLowerCase();
+  if (name === 'validé') return 'bg-green-600';
+  if (name === 'refusé') return 'bg-red-700';
+  return 'bg-slate-700';
+};
+
 const getDocumentLabel = (documentType) => {
   if (documentType === 'identity') return 'Pièce d’identité';
   if (documentType === 'driving_license') return 'Permis de conduire';
@@ -86,7 +93,7 @@ const AdminApplications = () => {
   }, [page, selectedStatus, selectedType]);
 
   useEffect(() => {
-    fetchApplications();
+    void fetchApplications();
   }, [fetchApplications]);
 
   // Load the full application before opening its review dialog.
@@ -156,7 +163,7 @@ const AdminApplications = () => {
       setSelectedApplication(data);
       setDecision(null);
       toast.success(decision === 'approve' ? 'Le dossier a été validé.' : 'Le dossier a été refusé.');
-      fetchApplications();
+      void fetchApplications();
     } catch (error) {
       toast.error(error.response?.data?.message || 'La mise à jour du dossier a échoué.');
     } finally {
@@ -167,6 +174,48 @@ const AdminApplications = () => {
   const isPending = selectedApplication?.status?.name?.toLowerCase() === 'déposé';
   const firstEntry = count === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const lastEntry = Math.min(page * PAGE_SIZE, count);
+  let decisionButtonLabel;
+  if (savingDecision) {
+    decisionButtonLabel = 'Mise à jour…';
+  } else if (decision === 'approve') {
+    decisionButtonLabel = 'Confirmer la validation';
+  } else {
+    decisionButtonLabel = 'Confirmer le refus';
+  }
+
+  let applicationRows;
+  if (loading) {
+    applicationRows = <tr><td colSpan="6" className="py-16 text-center text-slate-500">Chargement des dossiers…</td></tr>;
+  } else if (applications.length === 0) {
+    applicationRows = <tr><td colSpan="6" className="py-16 text-center text-slate-500">Aucun dossier ne correspond à ces filtres.</td></tr>;
+  } else {
+    applicationRows = applications.map((application) => (
+      <tr key={application.id} className="text-slate-700 hover:bg-slate-50">
+        <td className="px-6 py-8">
+          <button type="button" onClick={() => openApplication(application.id)} className="font-semibold text-blue-700 hover:underline">
+            {application.id}
+          </button>
+        </td>
+        <td className="px-6 py-8 font-semibold text-slate-800">
+          <button type="button" onClick={() => openApplication(application.id)} className="text-left hover:text-blue-700">
+            {getUserName(application.user)}
+          </button>
+        </td>
+        <td className="px-6 py-8">
+          <Link to={`/vehicule/${application.vehicle.id}`} className="font-medium text-blue-700 underline underline-offset-2 hover:text-blue-900">
+            {getVehicleName(application.vehicle)}
+          </Link>
+        </td>
+        <td className="px-6 py-8">{getContractLabel(application.vehicle.contract_type)}</td>
+        <td className="px-6 py-8">{formatDate(application.created_at)}</td>
+        <td className="px-6 py-8">
+          <span className={`inline-flex min-w-28 justify-center rounded-full px-3 py-2 text-xs font-bold uppercase text-white ${getStatusClass(application.status)}`}>
+            {getStatusLabel(application.status)}
+          </span>
+        </td>
+      </tr>
+    ));
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
@@ -243,36 +292,7 @@ const AdminApplications = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {loading ? (
-                  <tr><td colSpan="6" className="py-16 text-center text-slate-500">Chargement des dossiers…</td></tr>
-                ) : applications.length === 0 ? (
-                  <tr><td colSpan="6" className="py-16 text-center text-slate-500">Aucun dossier ne correspond à ces filtres.</td></tr>
-                ) : applications.map((application) => (
-                  <tr key={application.id} className="text-slate-700 hover:bg-slate-50">
-                    <td className="px-6 py-8">
-                      <button type="button" onClick={() => openApplication(application.id)} className="font-semibold text-blue-700 hover:underline">
-                        {application.id}
-                      </button>
-                    </td>
-                    <td className="px-6 py-8 font-semibold text-slate-800">
-                      <button type="button" onClick={() => openApplication(application.id)} className="text-left hover:text-blue-700">
-                        {getUserName(application.user)}
-                      </button>
-                    </td>
-                    <td className="px-6 py-8">
-                      <Link to={`/vehicule/${application.vehicle.id}`} className="font-medium text-blue-700 underline underline-offset-2 hover:text-blue-900">
-                        {getVehicleName(application.vehicle)}
-                      </Link>
-                    </td>
-                    <td className="px-6 py-8">{getContractLabel(application.vehicle.contract_type)}</td>
-                    <td className="px-6 py-8">{formatDate(application.created_at)}</td>
-                    <td className="px-6 py-8">
-                      <span className={`inline-flex min-w-28 justify-center rounded-full px-3 py-2 text-xs font-bold uppercase text-white ${application.status.name.toLowerCase() === 'validé' ? 'bg-green-600' : application.status.name.toLowerCase() === 'refusé' ? 'bg-red-700' : 'bg-slate-700'}`}>
-                        {getStatusLabel(application.status)}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {applicationRows}
               </tbody>
             </table>
           </div>
@@ -298,15 +318,15 @@ const AdminApplications = () => {
       </div>
 
       {loadingDetails && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" role="status">
+        <output className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
           <LoaderCircle className="h-10 w-10 animate-spin text-white" />
           <span className="sr-only">Chargement du dossier</span>
-        </div>
+        </output>
       )}
 
       {selectedApplication && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/50 p-4 sm:p-8">
-          <section role="dialog" aria-modal="true" aria-labelledby="application-detail-title" className="relative my-auto w-full max-w-4xl space-y-7 rounded-2xl bg-white p-6 shadow-2xl sm:p-8">
+          <dialog open aria-modal="true" aria-labelledby="application-detail-title" className="relative my-auto w-full max-w-4xl space-y-7 rounded-2xl bg-white p-6 shadow-2xl sm:p-8">
             <button type="button" onClick={() => setSelectedApplication(null)} aria-label="Fermer le détail du dossier" className="absolute right-6 top-6 rounded-lg p-2 text-slate-600 hover:bg-slate-100">
               <X className="h-6 w-6" />
             </button>
@@ -376,7 +396,7 @@ const AdminApplications = () => {
                 </button>
               </div>
             )}
-          </section>
+          </dialog>
         </div>
       )}
 
@@ -407,7 +427,7 @@ const AdminApplications = () => {
             <div className="flex flex-col-reverse justify-end gap-3 sm:flex-row">
               <button type="button" disabled={savingDecision} onClick={() => setDecision(null)} className="rounded-lg bg-slate-100 px-5 py-3 font-medium text-slate-700 hover:bg-slate-200 disabled:opacity-50">Annuler</button>
               <button type="button" disabled={savingDecision} onClick={confirmDecision} className={`rounded-lg px-5 py-3 font-semibold text-white disabled:opacity-50 ${decision === 'approve' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-700 hover:bg-red-800'}`}>
-                {savingDecision ? 'Mise à jour…' : decision === 'approve' ? 'Confirmer la validation' : 'Confirmer le refus'}
+                {decisionButtonLabel}
               </button>
             </div>
           </section>

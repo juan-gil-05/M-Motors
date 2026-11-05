@@ -11,7 +11,75 @@ export default function Navbar() {
 
     const handleLogout = () => {
         logout();
-        navigate('/');
+        void navigate('/');
+    };
+
+    const renderAuthActions = () => {
+        if (isAdmin) {
+            return (
+                <>
+                    <div className="flex items-center gap-3 rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-800">
+                        <CircleUserRound className="h-5 w-5" /> Administrateur
+                    </div>
+                    <button onClick={handleLogout} className="bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition cursor-pointer">
+                        Se déconnecter
+                    </button>
+                </>
+            );
+        }
+
+        if (isAuthenticated) {
+            return (
+                <button onClick={handleLogout} className="bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition cursor-pointer">
+                    Se déconnecter
+                </button>
+            );
+        }
+
+        return (
+            <>
+                <Link to="/connexion" className="bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition">
+                    Se connecter
+                </Link>
+                <Link to="/inscription" className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-700 transition">
+                    S'inscrire
+                </Link>
+            </>
+        );
+    };
+
+    const renderMobileAuthActions = () => {
+        if (isAdmin) {
+            return (
+                <div className='flex gap-2'>
+                    <div className="flex items-center gap-3 rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-800">
+                        <CircleUserRound className="h-5 w-5" /> Administrateur
+                    </div>
+                    <button onClick={handleLogout} className="bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition cursor-pointer">
+                        Se déconnecter
+                    </button>
+                </div>
+            );
+        }
+
+        if (isAuthenticated) {
+            return (
+                <button onClick={handleLogout} className="bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition cursor-pointer">
+                    Se déconnecter
+                </button>
+            );
+        }
+
+        return (
+            <div className='flex gap-2'>
+                <Link to="/connexion" className="bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition">
+                    Se connecter
+                </Link>
+                <Link to="/inscription" className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-700 transition">
+                    S'inscrire
+                </Link>
+            </div>
+        );
     };
 
     return (
@@ -58,56 +126,12 @@ export default function Navbar() {
 
                     {/* Auth Buttons Desktop */}
                     <div className="hidden md:flex items-center space-x-3">
-                        {isAdmin ? (
-                            <>
-                                <div className="flex items-center gap-3 rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-800">
-                                    <CircleUserRound className="h-5 w-5" /> Administrateur
-                                </div>
-                                <button onClick={handleLogout} className="bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition cursor-pointer">
-                                    Se déconnecter
-                                </button>
-                            </>
-                        ) : isAuthenticated ?
-                            <button onClick={handleLogout} className="bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition cursor-pointer">
-                                Se déconnecter
-                            </button>
-                            :
-                            <>
-                                <Link to="/connexion" className="bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition">
-                                    Se connecter
-                                </Link>
-                                <Link to="/inscription" className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-700 transition">
-                                    S'inscrire
-                                </Link>
-                            </>
-                        }
+                        {renderAuthActions()}
                     </div>
 
                     {/* Mobile Profile Icon */}
                     <div className="md:hidden">
-                        {isAdmin ? (
-                            <div className='flex gap-2'>
-                                <div className="flex items-center gap-3 rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-800">
-                                    <CircleUserRound className="h-5 w-5" /> Administrateur
-                                </div>
-                                <button onClick={handleLogout} className="bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition cursor-pointer">
-                                    Se déconnecter
-                                </button>
-                            </div>
-                        ) : isAuthenticated ?
-                            <button onClick={handleLogout} className="bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition cursor-pointer">
-                                Se déconnecter
-                            </button>
-                            :
-                            <div className='flex gap-2'>
-                                <Link to="/connexion" className="bg-blue-700 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-800 transition">
-                                    Se connecter
-                                </Link>
-                                <Link to="/inscription" className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium text-sm hover:bg-blue-700 transition">
-                                    S'inscrire
-                                </Link>
-                            </div>
-                        }
+                        {renderMobileAuthActions()}
                     </div>
                 </div>
             </div>

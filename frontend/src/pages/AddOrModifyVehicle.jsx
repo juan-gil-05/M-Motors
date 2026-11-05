@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-hooks/immutability */
-/* eslint-disable no-unused-vars */
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Upload, Info, Sliders, FileText, Trash2 } from 'lucide-react';
@@ -49,12 +48,20 @@ const AddOrModifyVehicle = () => {
   );
   const [coverIndex, setCoverIndex] = useState(() => {
     const mainImageIndex = (vehicleData?.images ?? []).findIndex((image) => image.is_main);
-    return mainImageIndex >= 0 ? mainImageIndex : 0;
+    return Math.max(mainImageIndex, 0);
   });
 
   // Status feedback states
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  let submitButtonLabel = 'Publier le véhicule';
+
+  if (isSubmitting) {
+    submitButtonLabel = 'Enregistrement...';
+  } else if (vehicleData) {
+    submitButtonLabel = 'Enregistrer les modifications';
+  }
 
   // vehicle data states
   const [makerData, setMakerData] = useState([])
@@ -65,14 +72,14 @@ const AddOrModifyVehicle = () => {
 
   // functions to get and show the different form options
   useEffect(() => {
-    listVehicleMakers();
-    listVehicleModelsByMakerId();
+    void listVehicleMakers();
+    void listVehicleModelsByMakerId();
   }, [formData.make])
 
   useEffect(() => {
-    listVehicleGearboxes();
-    listVehicleFuels();
-    listVehicleContracTypes();
+    void listVehicleGearboxes();
+    void listVehicleFuels();
+    void listVehicleContracTypes();
   }, [])
 
 
@@ -213,13 +220,13 @@ const AddOrModifyVehicle = () => {
 
     try {
       if (vehicleData) {
-        const response = await api.put(`/vehicle_api/vehicles/${vehicleData.id}/`, data, {
+        await api.put(`/vehicle_api/vehicles/${vehicleData.id}/`, data, {
           headers: {
             'content-type': 'multipart/form-data',
           },
         });
       } else {
-        const response = await api.post('/vehicle_api/vehicles/', data, {
+        await api.post('/vehicle_api/vehicles/', data, {
           headers: {
             'content-type': 'multipart/form-data',
           },
@@ -250,10 +257,10 @@ const AddOrModifyVehicle = () => {
       });
       setPhotos([]);
       setCoverIndex(0);
-      navigate('/vehicules');
+      void navigate('/admin/vehicules');
       // Display success message
       toast.success(vehicleData ? 'Le véhicule a bien été modifié' : 'Le véhicule a bien été ajouté')
-    } catch (err) {
+    } catch {
       setErrorMessage(vehicleData
         ? 'Une erreur est survenue lors de la modification du véhicule.'
         : 'Une erreur est survenue lors de l\'ajout du véhicule.');
@@ -294,7 +301,7 @@ const AddOrModifyVehicle = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Brand */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Marque</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1" htmlFor='marque'>Marque</label>
                   <select name="make" required value={formData.make} onChange={handleInputChange} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-600">
                     <option value="">Sélectionner la marque</option>
                     {makerData.length > 0 && (
@@ -308,7 +315,7 @@ const AddOrModifyVehicle = () => {
                 </div>
                 {/* Model */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Modèle</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1" htmlFor='model'>Modèle</label>
                   <select name="model" required value={formData.model} onChange={handleInputChange} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-600">
                     <option value="">Sélectionner le modèle</option>
                     {modelData.length > 0 && (
@@ -323,7 +330,7 @@ const AddOrModifyVehicle = () => {
                 </div>
                 {/* kilometers */}
                 <div className='col-span-2'>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Kilométrage</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1" htmlFor='kilométrage'>Kilométrage</label>
                   <input
                     type="number" min={0}
                     name="kilometres"
@@ -345,7 +352,7 @@ const AddOrModifyVehicle = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Gearboxes */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Boîte de vitesses</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1" htmlFor='boite-vitesses' >Boîte de vitesses</label>
                   <select name="gearbox" required value={formData.gearbox} onChange={handleInputChange} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-600">
                     <option value="">Sélectionner la boîte de vitesses</option>
                     {gearboxData.length > 0 && (
@@ -359,7 +366,7 @@ const AddOrModifyVehicle = () => {
                 </div>
                 {/* Fuel */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Énergie</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1" htmlFor='energie'>Énergie</label>
                   <select name="fuel" required value={formData.fuel} onChange={handleInputChange} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-600">
                     <option value="">Sélectionner l'énergie</option>
                     {fuelData.length > 0 && (
@@ -423,7 +430,7 @@ const AddOrModifyVehicle = () => {
                   <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        <label className="block text-xs font-semibold text-slate-700 mb-1" htmlFor='duree-contrat'>
                           Durée du contrat (Mois)
                         </label>
                         <select
@@ -442,7 +449,7 @@ const AddOrModifyVehicle = () => {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        <label className="block text-xs font-semibold text-slate-700 mb-1" htmlFor='km/an'>
                           Kilométrage annuel inclus (km/an)
                         </label>
                         <select
@@ -462,7 +469,7 @@ const AddOrModifyVehicle = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      <label className="block text-xs font-semibold text-slate-700 mb-1" htmlFor='option-achat-final'>
                         Option d'achat finale (€)
                       </label>
                       <input
@@ -512,20 +519,27 @@ const AddOrModifyVehicle = () => {
                 {photos.map((photo, index) => (
                   <div
                     key={photo.id ?? photo.previewUrl}
-                    onClick={() => setCoverIndex(index)}
-                    className={`relative rounded-lg overflow-hidden border-2 cursor-pointer aspect-video bg-slate-100 ${coverIndex === index ? 'border-blue-600 ring-2 ring-blue-600/20' : 'border-slate-200'
+                    className={`relative rounded-lg overflow-hidden border-2 aspect-video bg-slate-100 ${coverIndex === index ? 'border-blue-600 ring-2 ring-blue-600/20' : 'border-slate-200'
                       }`}
                   >
-                    <img
-                      src={photo.previewUrl}
-                      alt={`Aperçu ${index}`}
-                      className="w-full h-full object-cover"
-                    />
-                    {coverIndex === index && (
-                      <span className="absolute top-1 left-1 bg-blue-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded">
-                        Couverture
-                      </span>
-                    )}
+                    <button
+                      type="button"
+                      aria-label={`Définir la photo ${index + 1} comme couverture`}
+                      aria-pressed={coverIndex === index}
+                      onClick={() => setCoverIndex(index)}
+                      className="block w-full h-full cursor-pointer text-left"
+                    >
+                      <img
+                        src={photo.previewUrl}
+                        alt={`Aperçu ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      {coverIndex === index && (
+                        <span className="absolute top-1 left-1 bg-blue-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded">
+                          Couverture
+                        </span>
+                      )}
+                    </button>
                     <button
                       type="button"
                       aria-label="Supprimer cette photo"
@@ -557,7 +571,7 @@ const AddOrModifyVehicle = () => {
                 disabled={isSubmitting}
                 className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm transition-colors disabled:opacity-50"
               >
-                {isSubmitting ? 'Enregistrement...' : vehicleData ? 'Enregistrer les modifications' : 'Publier le véhicule'}
+                {submitButtonLabel}
               </button>
             </div>
           </div>

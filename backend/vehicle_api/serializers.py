@@ -1,6 +1,16 @@
 from rest_framework import serializers
-from .models import *
 import json
+from .models import (
+    ContractType,
+    Fuel,
+    Gearbox,
+    Image,
+    LeaseDetail,
+    Maker,
+    Model,
+    Status,
+    Vehicle,
+)
 
 
 class StatusSerializer(serializers.ModelSerializer):
@@ -106,36 +116,35 @@ class VehicleSerializer(serializers.ModelSerializer):
         ]
 
     
-    def to_internal_value(self, data):
-        # 1. copy of data in Request/QueryDict
+    @staticmethod
+    def _normalize_input_data(data):
         if hasattr(data, 'dict'):
-            # transform the QueryDict in python dict
             data_dict = data.dict()
-            # if images are sent, they are stocked in dictionary
+            # QueryDict.dict() keeps only one value per key, so retain every uploaded file.
             if hasattr(data, 'getlist') and 'uploaded_photos' in data:
                 data_dict['uploaded_photos'] = data.getlist('uploaded_photos')
         else:
             data_dict = dict(data)
+        return data_dict
 
-        # 2. transform lease_details into JSON format
+    @staticmethod
+    def _parse_lease_details(data_dict):
         lease_details = data_dict.get('lease_details')
         if isinstance(lease_details, str) and lease_details.strip():
             try:
                 parsed_lease = json.loads(lease_details)
-                
-                # Clean the data if lease details is empty
                 if isinstance(parsed_lease, dict):
-                    cleaned_lease = {}
-                    for k, v in parsed_lease.items():
-                        cleaned_lease[k] = None if v == "" else v
-                    data_dict['lease_details'] = cleaned_lease
-                else:
-                    data_dict['lease_details'] = parsed_lease
-
+                    # Treat empty form fields as omitted values for optional lease fields.
+                    parsed_lease = {
+                        key: None if value == "" else value
+                        for key, value in parsed_lease.items()
+                    }
+                data_dict['lease_details'] = parsed_lease
             except (ValueError, TypeError):
                 data_dict['lease_details'] = None
 
-        # 3. transform images into JSON format
+    @staticmethod
+    def _parse_images(data_dict):
         images = data_dict.get('images')
         if isinstance(images, str):
             try:
@@ -145,6 +154,10 @@ class VehicleSerializer(serializers.ModelSerializer):
                     {"images": "Must be a valid JSON list."}
                 ) from exc
 
+    def to_internal_value(self, data):
+        data_dict = self._normalize_input_data(data)
+        self._parse_lease_details(data_dict)
+        self._parse_images(data_dict)
         return super().to_internal_value(data_dict)
 
     # Function to create a vehicle with the images and the lease details, in the request POST
@@ -180,68 +193,70 @@ class VehicleSerializer(serializers.ModelSerializer):
         return vehicle
 
 
+    def _update_lease_details(self, instance, lease_details_data):
+        if lease_details_data is not None and any(lease_details_data.values()):
+            lease_detail = getattr(instance, 'lease_details', None)
+            if lease_detail:
+                for attr, value in lease_details_data.items():
+                    setattr(lease_detail, attr, value)
+                lease_detail.save()
+            else:
+                LeaseDetail.objects.create(vehicle=instance, **lease_details_data)
+        elif 'lease_details' in self.initial_data or instance.contract_type.name != "location":
+            # Remove lease data only when explicitly cleared or no longer relevant to the contract.
+            lease_detail = getattr(instance, 'lease_details', None)
+            if lease_detail:
+                lease_detail.delete()
+
+    def _update_image_list(self, instance, images_data, uploaded_photos, cover_index):
+        # The submitted image list is authoritative: omitted existing images are removed.
+        keep_image_ids = [
+            image_data['id'] for image_data in images_data if 'id' in image_data
+        ]
+        instance.images.exclude(id__in=keep_image_ids).delete()
+
+        for index, image_data in enumerate(images_data):
+            is_main = index == cover_index
+            if 'id' in image_data:
+                image = instance.images.get(id=image_data['id'])
+                if image.is_main != is_main:
+                    image.is_main = is_main
+                    image.save(update_fields=['is_main'])
+            else:
+                # New entries refer to files by their position in uploaded_photos.
+                photo_index = image_data['uploaded_photo_index']
+                Image.objects.create(
+                    vehicle=instance,
+                    image=uploaded_photos[photo_index],
+                    is_main=is_main,
+                )
+
+    def _append_uploaded_images(self, instance, uploaded_photos, cover_index):
+        has_main_image = instance.images.filter(is_main=True).exists()
+        for index, photo_file in enumerate(uploaded_photos):
+            # Preserve the current cover; choose a new one only if the vehicle has none.
+            Image.objects.create(
+                vehicle=instance,
+                image=photo_file,
+                is_main=not has_main_image and index == cover_index,
+            )
+
+    def _update_images(self, instance, images_data, uploaded_photos, cover_index):
+        if images_data is not None:
+            self._update_image_list(instance, images_data, uploaded_photos, cover_index)
+        elif uploaded_photos:
+            self._append_uploaded_images(instance, uploaded_photos, cover_index)
+
     # Function to update a vehicle with the images and the lease details, in the request PUT
     def update(self, instance, validated_data):
-        # Take images, lease details and cover index over the principal request
         uploaded_photos = validated_data.pop('uploaded_photos', [])
         cover_index = validated_data.pop('cover_photo_index', 0)
         images_data = validated_data.pop('images', None)
         lease_details_data = validated_data.pop('lease_details', None)
 
-        # Update the vehicle data
         instance = super().update(instance, validated_data)
-        
-                        
-        # Intelligent update of lease details
-        if lease_details_data is not None and any(lease_details_data.values()):
-            # step A : The vehicle has already some leasing details
-            if hasattr(instance, 'lease_details') and instance.lease_details:
-                lease_detail = instance.lease_details
-                for attr, value in lease_details_data.items():
-                    setattr(lease_detail, attr, value)
-                lease_detail.save()
-            # step B : The vehicle was to sold, but now it has some lease details
-            else:
-                LeaseDetail.objects.create(vehicle=instance, **lease_details_data)
-        # Remove lease details only when explicitly cleared or when changing to a sale.
-        elif 'lease_details' in self.initial_data or instance.contract_type.name != "location":
-            if hasattr(instance, 'lease_details') and instance.lease_details:
-                instance.lease_details.delete()
-            
-            
-        # Accept images only when the request includes the complete image list.
-        if images_data is not None:
-            # Delete the vehicles images that are not in the list sent into the request 
-            keep_image_ids = [
-                image_data['id']
-                for image_data in images_data
-                if 'id' in image_data
-            ]
-            instance.images.exclude(id__in=keep_image_ids).delete()
-
-            for index, image_data in enumerate(images_data):
-                is_main = index == cover_index
-                if 'id' in image_data:
-                    image = instance.images.get(id=image_data['id'])
-                    if image.is_main != is_main:
-                        image.is_main = is_main
-                        image.save(update_fields=['is_main'])
-                else:
-                    photo_index = image_data['uploaded_photo_index']
-                    Image.objects.create(
-                        vehicle=instance,
-                        image=uploaded_photos[photo_index],
-                        is_main=is_main,
-                    )
-        elif uploaded_photos:
-            has_main_image = instance.images.filter(is_main=True).exists()
-            for index, photo_file in enumerate(uploaded_photos):
-                Image.objects.create(
-                    vehicle=instance,
-                    image=photo_file,
-                    is_main=not has_main_image and index == cover_index,
-                )
-
+        self._update_lease_details(instance, lease_details_data)
+        self._update_images(instance, images_data, uploaded_photos, cover_index)
         return instance
     
     def to_representation(self, instance):

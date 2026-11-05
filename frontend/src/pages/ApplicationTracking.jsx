@@ -79,6 +79,15 @@ export default function ApplicationTracking() {
   const rejected = normalizedStatus === 'refusé';
   const approved = normalizedStatus === 'validé';
   const finalDecision = rejected || approved;
+  let statusClass = 'border-orange-300 bg-orange-50 text-orange-700';
+  let statusLabel = 'En attente';
+  if (rejected) {
+    statusClass = 'border-red-300 bg-red-50 text-red-700';
+    statusLabel = 'Refusé';
+  } else if (approved) {
+    statusClass = 'border-green-300 bg-green-50 text-green-700';
+    statusLabel = 'Validé';
+  }
   const image = application.vehicle?.images?.find((item) => item.is_main)?.image_url || application.vehicle?.images?.[0]?.image_url || carDefault;
   const documents = application.documents || [];
   const trackingId = `MM-${new Date(application.created_at).getFullYear()}-${String(application.id).padStart(3, '0')}`;
@@ -100,21 +109,32 @@ export default function ApplicationTracking() {
             <h1 className="text-3xl font-bold text-slate-800 sm:text-4xl">Suivi du Dossier #{trackingId}</h1>
             <p className="mt-2 text-slate-600">Dernière mise à jour : {formatDate(application.updated_at || application.created_at)}</p>
           </div>
-          <span className={`w-fit rounded-lg border px-5 py-2 text-xl font-semibold ${rejected ? 'border-red-300 bg-red-50 text-red-700' : approved ? 'border-green-300 bg-green-50 text-green-700' : 'border-orange-300 bg-orange-50 text-orange-700'}`}>
-            {rejected ? 'Refusé' : approved ? 'Validé' : 'En attente'}
+          <span className={`w-fit rounded-lg border px-5 py-2 text-xl font-semibold ${statusClass}`}>
+            {statusLabel}
           </span>
         </header>
 
         <section aria-label="Étapes du dossier" className="relative grid grid-cols-3 gap-2 px-2 py-6 sm:px-10">
           <div className="absolute left-[17%] right-[17%] top-9 h-0.5 bg-blue-600" />
-          {steps.map(({ title, icon: Icon, complete, current }, index) => (
-            <div key={title} className="relative flex flex-col items-center gap-3 text-center">
-              <span className={`z-10 flex h-12 w-12 items-center justify-center rounded-full border-4 ${complete ? (rejected && index === 2 ? 'border-red-100 bg-red-600 text-white' : 'border-blue-100 bg-blue-600 text-white') : current ? 'border-blue-100 bg-white text-blue-600' : 'border-slate-200 bg-white text-slate-400'}`}>
-                <Icon className="h-5 w-5" />
-              </span>
-              <span className={`text-sm font-medium sm:text-base ${current ? 'text-blue-700' : 'text-slate-700'}`}>{title}</span>
-            </div>
-          ))}
+          {steps.map(({ title, icon: Icon, complete, current }, index) => {
+            let stepClass = 'border-slate-200 bg-white text-slate-400';
+            if (complete) {
+              stepClass = rejected && index === 2
+                ? 'border-red-100 bg-red-600 text-white'
+                : 'border-blue-100 bg-blue-600 text-white';
+            } else if (current) {
+              stepClass = 'border-blue-100 bg-white text-blue-600';
+            }
+
+            return (
+              <div key={title} className="relative flex flex-col items-center gap-3 text-center">
+                <span className={`z-10 flex h-12 w-12 items-center justify-center rounded-full border-4 ${stepClass}`}>
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span className={`text-sm font-medium sm:text-base ${current ? 'text-blue-700' : 'text-slate-700'}`}>{title}</span>
+              </div>
+            );
+          })}
         </section>
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]">
