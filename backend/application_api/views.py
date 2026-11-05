@@ -126,7 +126,7 @@ class ApplicationDocumentContentView(APIView):
         )
         try:
             file_handle = default_storage.open(document.document_path, 'rb')
-        except (FileNotFoundError, OSError) as error:
+        except OSError as error:
             raise Http404('Le document demandé est introuvable.') from error
 
         extension = document.file_extension.lower()

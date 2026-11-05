@@ -11,6 +11,7 @@ vcap-local.json
 node_modules/
 /frontend/dist
 /frontend/build
+/frontend/coverage/
 .eslintcache
 
 # Security environment

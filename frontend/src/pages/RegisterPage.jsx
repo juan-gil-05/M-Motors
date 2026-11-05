@@ -25,8 +25,8 @@ const RegisterPage = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Regex patterns for email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    // Strong password: at least 8 chars, 1 uppercase, 1 digit, 1 special character
+    const emailRegex = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/;
+    // Strong password: at least 8 chars, 1 uppercase, 1 digit, 1 special chara2cter
     const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
     /**

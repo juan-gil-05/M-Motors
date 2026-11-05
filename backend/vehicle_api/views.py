@@ -127,7 +127,7 @@ class MakerViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
     
     def get_queryset(self):
-        return Maker.objects.all()
+        return Maker.objects.all().order_by("pk")
     
     
 class ModelViewSet(viewsets.ModelViewSet):
@@ -144,11 +144,11 @@ class ModelViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
     
     def get_queryset(self):
-        res = Model.objects.all()
+        res = Model.objects.all().order_by("pk")
         # Filter the models by maker ID
-        makerId = self.request.query_params.get("maker_id")
-        if makerId is not None:
-            res = res.filter(maker_id=makerId)
+        maker_id = self.request.query_params.get("maker_id")
+        if maker_id is not None:
+            res = res.filter(maker_id=maker_id)
         return res
     
     
@@ -166,7 +166,7 @@ class GearboxViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
     
     def get_queryset(self):
-        return Gearbox.objects.all()
+        return Gearbox.objects.all().order_by("pk")
     
       
 class FuelViewSet(viewsets.ModelViewSet):
@@ -183,7 +183,7 @@ class FuelViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
     
     def get_queryset(self):
-        return Fuel.objects.all()
+        return Fuel.objects.all().order_by("pk")
     
     
 class ContractTypeViewSet(viewsets.ModelViewSet):
@@ -200,4 +200,4 @@ class ContractTypeViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
 
     def get_queryset(self):
-        return ContractType.objects.all()
+        return ContractType.objects.all().order_by("pk")
