@@ -143,6 +143,37 @@ docker compose exec backend python manage.py migrate
 
 ---
 
+## 𖦥 Stratégie de branches Git
+
+La gestion du versionnement s’appuie sur une stratégie de nommage et d’isolation des branches afin de garantir la stabilité du code mis en production :
+
+- **`main` (production)** : branche principale contenant du code stable et testé, reliée à l’environnement de déploiement sur Render.
+- **`development` (intégration)** : branche centrale regroupant les fonctionnalités finalisées et validées avant leur mise en production.
+
+### Types de branches de développement
+
+- **`feature/*` (fonctionnalités)** : branches éphémères créées depuis `development` pour développer une User Story ou une nouvelle fonctionnalité. Exemples : `feature/login`, `feature/vehicle-crud`.
+- **`bugfix/*` (corrections de bugs)** : branches utilisées pour corriger un bug détecté pendant les tests sur `development`. Exemple : `bugfix/recaptcha`.
+- **`hotfix/*` (correctifs urgents)** : branches créées depuis `main` pour corriger un incident critique en production, puis fusionnées dans `main` et `development`. Exemple : `hotfix/security-jwt`.
+- **`release/*` (versions)** : branches préparatoires qui permettent de stabiliser une version avant son passage en production sur `main`. Exemple : `release/deploy-prod`.
+
+Après les tests globaux et la validation sur `development`, les modifications sont fusionnées dans `main` pour la mise en production.
+
+---
+
+## 📘 Documentation de l’API avec Swagger
+
+Le projet expose une documentation interactive générée à partir du schéma OpenAPI 3.0. Swagger regroupe les endpoints par API (notamment `api`, `application_api`, `user_api` et `vehicle_api`), présente les méthodes HTTP disponibles et permet de consulter les paramètres et les réponses attendues. Les routes protégées peuvent être testées après authentification avec le bouton **Authorize**.
+
+- En local : [http://localhost:8000/swagger/](http://localhost:8000/swagger/)
+- En production : [documentation Swagger sur Render](https://m-motors-9ufv.onrender.com/swagger/)
+
+La capture ci-dessous montre l’interface Swagger et plusieurs endpoints de `vehicle_api` :
+
+![Documentation Swagger de l’API M-Motors](documentation/swagger_exemple.png)
+
+---
+
 ## 🌐 Déploiement
 
 Le site et son API sont déployés sur **Render** :
